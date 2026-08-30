@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Embed Discord</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #313338;
+            color: #dbdee1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #2b2d31;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #b5bac1;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #1e1f22;
+            border: 1px solid #383a40;
+            border-radius: 4px;
+            color: #f2f3f5;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: #5865f2;
+        }
+
+        .color-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="color"] {
+            border: none;
+            width: 45px;
+            height: 38px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #5865f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #4752c4;
+        }
+
+        #status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .status-success {
+            background-color: #23a55a22;
+            color: #23a55a;
+            border: 1px solid #23a55a;
+        }
+
+        .status-error {
+            background-color: #f23f4322;
+            color: #f23f43;
+            border: 1px solid #f23f43;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Gerador de Embed Discord</h2>
+
+    <div class="form-group">
+        <label for="title">Título:</label>
+        <input type="text" id="title" placeholder="Digite o título..." value="Astro Bot">
+    </div>
+
+    <div class="form-group">
+        <label for="description">Descrição:</label>
+        <textarea id="description" placeholder="Digite o conteúdo da mensagem...">Mensagem enviada com imagem e thumbnail!</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="thumbFile">Thumbnail (Ícone Pequeno no Canto):</label>
+        <input type="file" id="thumbFile" accept="image/*">
+    </div>
+
+    <div class="form-group">
+        <label for="mainImgFile">Imagem Principal (Banner Grande Embaixo):</label>
+        <input type="file" id="mainImgFile" accept="image/*">
+    </div>
+
+    <div class="form-group">
+        <label for="color">Cor Lateral (Accent Color):</label>
+        <div class="color-wrapper">
+            <input type="color" id="color" value="#0099FF">
+            <span id="colorHex">#0099FF</span>
+        </div>
+    </div>
+
+    <button onclick="sendMessage()">Enviar Embed</button>
+
+    <div id="status"></div>
+</div>
+
+<script>
+    // URL Oculta (Não aparece na tela para o usuário)
+    const WEBHOOK_URL = 'https://discord.com/api/webhooks/1543759267444826172/u_HAC3q-iFpoZwr8aRuvBD50qb7eQCK_0on_LAHZ1DwxTWE6MwQKiro4iLXHaKMcusLE';
+
+    const colorInput = document.getElementById('color');
+    const colorHex = document.getElementById('colorHex');
+
+    colorInput.addEventListener('input', (e) => {
+        colorHex.textContent = e.target.value.toUpperCase();
+    });
+
+    async function sendMessage() {
+        const title = document.getElementById('title').value.trim() || 'Sem Título';
+        const description = document.getElementById('description').value.trim() || '';
+        
+        const thumbFile = document.getElementById('thumbFile').files[0];
+        const mainImgFile = document.getElementById('mainImgFile').files[0];
+        
+        const hexColor = document.getElementById('color').value;
+        const decimalColor = parseInt(hexColor.replace('#', ''), 16);
+
+        const statusDiv = document.getElementById('status');
+        statusDiv.style.display = 'none';
+
+        const formData = new FormData();
+        const embedObj = {
+            title: title,
+            description: description,
+            color: decimalColor,
+            timestamp: new Date().toISOString()
+        };
+
+        let fileCounter = 0;
+
+        // Anexa Thumbnail (Ícone no canto superior direito)
+        if (thumbFile) {
+            const thumbName = `thumb_${thumbFile.name}`;
+            embedObj.thumbnail = { url: `attachment://${thumbName}` };
+            formData.append(`files[${fileCounter}]`, thumbFile, thumbName);
+            fileCounter++;
+        }
+
+        // Anexa Imagem Principal (Banner grande embaixo do texto)
+        if (mainImgFile) {
+            const mainImgName = `img_${mainImgFile.name}`;
+            embedObj.image = { url: `attachment://${mainImgName}` };
+            formData.append(`files[${fileCounter}]`, mainImgFile, mainImgName);
+            fileCounter++;
+        }
+
+        const payload = {
+            embeds: [embedObj]
+        };
+
+        formData.append('payload_json', JSON.stringify(payload));
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok || response.status === 204) {
+                showStatus('Embed enviada com sucesso!', true);
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                showStatus(`Erro ao enviar (${response.status}): ${errorData.message || 'Verifique o webhook.'}`, false);
+            }
+        } catch (err) {
+            showStatus('Erro de rede ao conectar com o Discord Webhook.', false);
+        }
+    }
+
+    function showStatus(text, isSuccess) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = text;
+        statusDiv.className = isSuccess ? 'status-success' : 'status-error';
+        statusDiv.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
+
