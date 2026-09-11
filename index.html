@@ -1,254 +1,562 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Embed Discord</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crie seu Addon</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --header-bg: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+      --header-shadow-3d: 0 12px 28px -6px rgba(0, 0, 0, 0.7), 0 4px 10px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      --header-border-bottom: rgba(0, 0, 0, 0.6);
+      
+      --card-bg: rgba(20, 27, 44, 0.85);
+      --inset-bg: rgba(0, 0, 0, 0.4);
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary-color: #6366f1;
+      
+      --shadow-inset: inset 0 5px 12px rgba(0, 0, 0, 0.6), inset 0 1px 3px rgba(0, 0, 0, 0.5);
+      --shadow-drop: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      --text-shadow-3d: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
 
-        body {
-            background-color: #313338;
-            color: #dbdee1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+    [data-theme="light"] {
+      --bg-color: #e2e8f0;
+      --header-bg: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+      --header-shadow-3d: 0 12px 24px -6px rgba(0, 0, 0, 0.2), 0 4px 8px -2px rgba(0, 0, 0, 0.12), inset 0 1px 0 #ffffff;
+      --header-border-bottom: rgba(0, 0, 0, 0.15);
+      
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --inset-bg: rgba(0, 0, 0, 0.06);
+      --text-color: #0f172a;
+      --text-muted: #64748b;
+      --border-color: rgba(0, 0, 0, 0.08);
+      
+      --shadow-inset: inset 0 4px 10px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+      --shadow-drop: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
+      --text-shadow-3d: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
 
-        .container {
-            background-color: #2b2d31;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            width: 100%;
-            max-width: 600px;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent !important;
+      outline: none !important;
+      user-select: none;
+    }
 
-        h2 {
-            color: #ffffff;
-            margin-bottom: 20px;
-            text-align: center;
-        }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+    /* Header 3D */
+    header.top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--header-border-bottom);
+      box-shadow: var(--header-shadow-3d);
+      z-index: 100;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            color: #b5bac1;
-        }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.9;
+      transition: transform 0.15s ease, opacity 0.2s;
+    }
 
-        input[type="text"],
-        input[type="file"],
-        textarea {
-            width: 100%;
-            padding: 10px;
-            background-color: #1e1f22;
-            border: 1px solid #383a40;
-            border-radius: 4px;
-            color: #f2f3f5;
-            font-size: 14px;
-            outline: none;
-        }
+    .icon-btn:hover {
+      opacity: 1;
+    }
 
-        input[type="file"] {
-            cursor: pointer;
-        }
+    .icon-btn:active {
+      transform: scale(0.85);
+    }
 
-        input[type="text"]:focus,
-        textarea:focus {
-            border-color: #5865f2;
-        }
+    .top-middle-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--text-color);
+      text-shadow: var(--text-shadow-3d);
+      white-space: nowrap;
+    }
 
-        .color-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    /* Container Rebaixado */
+    .main-container {
+      margin-top: 68px;
+      padding: 24px 16px;
+      width: 100%;
+      max-width: 480px;
+    }
 
-        input[type="color"] {
-            border: none;
-            width: 45px;
-            height: 38px;
-            border-radius: 4px;
-            cursor: pointer;
-            background: transparent;
-        }
+    .inset-well {
+      background: var(--inset-bg);
+      box-shadow: var(--shadow-inset);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 20px;
+    }
 
-        textarea {
-            resize: vertical;
-            min-height: 90px;
-        }
+    /* Grid 3x4 (3 Botões por Linha, 4 Linhas = 12 Botões) */
+    .grid-3x4 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #5865f2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 10px;
-        }
+    .btn-card {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 16px 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px -4px var(--primary-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+      transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    }
 
-        button:hover {
-            background-color: #4752c4;
-        }
+    .btn-card:active {
+      transform: scale(0.92);
+      box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+    }
 
-        #status {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-            text-align: center;
-            font-size: 14px;
-        }
+    .btn-card:hover {
+      filter: brightness(1.1);
+    }
 
-        .status-success {
-            background-color: #23a55a22;
-            color: #23a55a;
-            border: 1px solid #23a55a;
-        }
+    /* Configurações Full Screen */
+    .config-fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-color);
+      backdrop-filter: blur(25px);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-        .status-error {
-            background-color: #f23f4322;
-            color: #f23f43;
-            border: 1px solid #f23f43;
-        }
-    </style>
+    .config-fullscreen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      font-size: 2.2rem;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.7;
+      transition: transform 0.2s ease, opacity 0.2s;
+    }
+
+    .close-btn:hover {
+      opacity: 1;
+    }
+
+    .close-btn:active {
+      transform: scale(0.85) rotate(90deg);
+    }
+
+    .config-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow-drop);
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .fullscreen-header {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.5px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .field-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .inset-panel {
+      background: var(--inset-bg);
+      box-shadow: var(--shadow-inset);
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      border-radius: 16px;
+    }
+
+    .theme-toggle-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .theme-opt {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-opt:active {
+      transform: scale(0.95);
+    }
+
+    .theme-opt.active {
+      background: var(--card-bg);
+      color: var(--text-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .palette-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+    }
+
+    .swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .swatch:active {
+      transform: scale(0.85) !important;
+    }
+
+    .swatch.active {
+      border-color: var(--text-color);
+      transform: scale(1.15);
+    }
+
+    .custom-color-wrapper {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border-color);
+      transition: transform 0.2s ease;
+    }
+
+    .custom-color-wrapper:active {
+      transform: scale(0.85);
+    }
+
+    .custom-color-wrapper input[type="color"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .lang-chips {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 6px;
+    }
+
+    .chip-opt {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 8px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .chip-opt .flag-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .chip-opt:active {
+      transform: scale(0.92);
+    }
+
+    .chip-opt.active {
+      background: var(--primary-color);
+      color: #ffffff;
+      box-shadow: 0 6px 18px -4px var(--primary-color);
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Gerador de Embed Discord</h2>
+  <!-- Header 3D -->
+  <header class="top-bar">
+    <button class="icon-btn" onclick="openConfig()" aria-label="Configurações">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="5" r="2.2"/>
+        <circle cx="12" cy="12" r="2.2"/>
+        <circle cx="12" cy="19" r="2.2"/>
+      </svg>
+    </button>
+    <div class="top-middle-title" id="top-title">Crie seu Addon</div>
+  </header>
 
-    <div class="form-group">
-        <label for="title">Título:</label>
-        <input type="text" id="title" placeholder="Digite o título..." value="Astro Bot">
+  <!-- Main Container -->
+  <main class="main-container">
+    <div class="inset-well">
+      <!-- Grid 3x4 (12 Botões) -->
+      <div class="grid-3x4">
+        
+        <!-- Linha 1 -->
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 1</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 2</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 3</span>
+        </button>
+
+        <!-- Linha 2 -->
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 4</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 5</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 6</span>
+        </button>
+
+        <!-- Linha 3 -->
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 7</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 8</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 9</span>
+        </button>
+
+        <!-- Linha 4 -->
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 10</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 11</span>
+        </button>
+        <button class="btn-card">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Item 12</span>
+        </button>
+
+      </div>
     </div>
+  </main>
 
-    <div class="form-group">
-        <label for="description">Descrição:</label>
-        <textarea id="description" placeholder="Digite o conteúdo da mensagem...">Mensagem enviada com imagem e thumbnail!</textarea>
-    </div>
+  <!-- Tela Full Screen Configurações -->
+  <div class="config-fullscreen" id="config-fullscreen">
+    <button class="close-btn" onclick="closeConfig()">&times;</button>
+    
+    <div class="config-card">
+      <div class="fullscreen-header" id="txt-header">Configurações</div>
 
-    <div class="form-group">
-        <label for="thumbFile">Thumbnail (Ícone Pequeno no Canto):</label>
-        <input type="file" id="thumbFile" accept="image/*">
-    </div>
-
-    <div class="form-group">
-        <label for="mainImgFile">Imagem Principal (Banner Grande Embaixo):</label>
-        <input type="file" id="mainImgFile" accept="image/*">
-    </div>
-
-    <div class="form-group">
-        <label for="color">Cor Lateral (Accent Color):</label>
-        <div class="color-wrapper">
-            <input type="color" id="color" value="#0099FF">
-            <span id="colorHex">#0099FF</span>
+      <!-- Tema -->
+      <div class="field">
+        <span class="field-label" id="lbl-theme">Tema</span>
+        <div class="inset-panel theme-toggle-group">
+          <button class="theme-opt active" id="btn-theme-dark" onclick="selectTheme('dark')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            Dark
+          </button>
+          <button class="theme-opt" id="btn-theme-light" onclick="selectTheme('light')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            Light
+          </button>
         </div>
+      </div>
+
+      <!-- Paleta -->
+      <div class="field">
+        <span class="field-label" id="lbl-color">Cor da Paleta</span>
+        <div class="inset-panel palette-group">
+          <div class="swatch active" style="background: #6366f1;" onclick="selectColor('#6366f1', this)"></div>
+          <div class="swatch" style="background: #10b981;" onclick="selectColor('#10b981', this)"></div>
+          <div class="swatch" style="background: #f59e0b;" onclick="selectColor('#f59e0b', this)"></div>
+          <div class="swatch" style="background: #ec4899;" onclick="selectColor('#ec4899', this)"></div>
+          <div class="swatch" style="background: #3b82f6;" onclick="selectColor('#3b82f6', this)"></div>
+          
+          <div class="custom-color-wrapper" title="Escolher Cor">
+            <input type="color" value="#6366f1" onchange="selectColor(this.value, this.parentElement)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Idioma -->
+      <div class="field">
+        <span class="field-label" id="lbl-lang">Idioma</span>
+        <div class="inset-panel lang-chips">
+          <button class="chip-opt active" onclick="selectLang('pt', this)">
+            <span class="flag-icon">🇧🇷</span> PT
+          </button>
+          <button class="chip-opt" onclick="selectLang('en', this)">
+            <span class="flag-icon">🇺🇸</span> EN
+          </button>
+          <button class="chip-opt" onclick="selectLang('es', this)">
+            <span class="flag-icon">🇪🇸</span> ES
+          </button>
+        </div>
+      </div>
+
     </div>
+  </div>
 
-    <button onclick="sendMessage()">Enviar Embed</button>
-
-    <div id="status"></div>
-</div>
-
-<script>
-    // URL Oculta (Não aparece na tela para o usuário)
-    const WEBHOOK_URL = 'https://discord.com/api/webhooks/1543759267444826172/u_HAC3q-iFpoZwr8aRuvBD50qb7eQCK_0on_LAHZ1DwxTWE6MwQKiro4iLXHaKMcusLE';
-
-    const colorInput = document.getElementById('color');
-    const colorHex = document.getElementById('colorHex');
-
-    colorInput.addEventListener('input', (e) => {
-        colorHex.textContent = e.target.value.toUpperCase();
-    });
-
-    async function sendMessage() {
-        const title = document.getElementById('title').value.trim() || 'Sem Título';
-        const description = document.getElementById('description').value.trim() || '';
-        
-        const thumbFile = document.getElementById('thumbFile').files[0];
-        const mainImgFile = document.getElementById('mainImgFile').files[0];
-        
-        const hexColor = document.getElementById('color').value;
-        const decimalColor = parseInt(hexColor.replace('#', ''), 16);
-
-        const statusDiv = document.getElementById('status');
-        statusDiv.style.display = 'none';
-
-        const formData = new FormData();
-        const embedObj = {
-            title: title,
-            description: description,
-            color: decimalColor,
-            timestamp: new Date().toISOString()
-        };
-
-        let fileCounter = 0;
-
-        // Anexa Thumbnail (Ícone no canto superior direito)
-        if (thumbFile) {
-            const thumbName = `thumb_${thumbFile.name}`;
-            embedObj.thumbnail = { url: `attachment://${thumbName}` };
-            formData.append(`files[${fileCounter}]`, thumbFile, thumbName);
-            fileCounter++;
-        }
-
-        // Anexa Imagem Principal (Banner grande embaixo do texto)
-        if (mainImgFile) {
-            const mainImgName = `img_${mainImgFile.name}`;
-            embedObj.image = { url: `attachment://${mainImgName}` };
-            formData.append(`files[${fileCounter}]`, mainImgFile, mainImgName);
-            fileCounter++;
-        }
-
-        const payload = {
-            embeds: [embedObj]
-        };
-
-        formData.append('payload_json', JSON.stringify(payload));
-
-        try {
-            const response = await fetch(WEBHOOK_URL, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok || response.status === 204) {
-                showStatus('Embed enviada com sucesso!', true);
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                showStatus(`Erro ao enviar (${response.status}): ${errorData.message || 'Verifique o webhook.'}`, false);
-            }
-        } catch (err) {
-            showStatus('Erro de rede ao conectar com o Discord Webhook.', false);
-        }
+  <script>
+    function openConfig() {
+      document.getElementById('config-fullscreen').classList.add('active');
     }
 
-    function showStatus(text, isSuccess) {
-        const statusDiv = document.getElementById('status');
-        statusDiv.textContent = text;
-        statusDiv.className = isSuccess ? 'status-success' : 'status-error';
-        statusDiv.style.display = 'block';
+    function closeConfig() {
+      document.getElementById('config-fullscreen').classList.remove('active');
     }
-</script>
+
+    function selectTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('btn-theme-dark').classList.toggle('active', theme === 'dark');
+      document.getElementById('btn-theme-light').classList.toggle('active', theme === 'light');
+    }
+
+    function selectColor(color, element) {
+      document.documentElement.style.setProperty('--primary-color', color);
+      document.querySelectorAll('.swatch, .custom-color-wrapper').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+    }
+
+    function selectLang(lang, element) {
+      document.querySelectorAll('.chip-opt').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+
+      const i18n = {
+        pt: { addon: "Crie seu Addon", header: "Configurações", theme: "Tema", color: "Cor da Paleta", lang: "Idioma" },
+        en: { addon: "Create your Addon", header: "Settings", theme: "Theme", color: "Palette Color", lang: "Language" },
+        es: { addon: "Crea tu Addon", header: "Ajustes", theme: "Tema", color: "Color de Paleta", lang: "Idioma" }
+      };
+
+      document.getElementById('top-title').innerText = i18n[lang].addon;
+      document.getElementById('txt-header').innerText = i18n[lang].header;
+      document.getElementById('lbl-theme').innerText = i18n[lang].theme;
+      document.getElementById('lbl-color').innerText = i18n[lang].color;
+      document.getElementById('lbl-lang').innerText = i18n[lang].lang;
+    }
+  </script>
 
 </body>
 </html>
