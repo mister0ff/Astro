@@ -1,563 +1,951 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crie seu Addon</title>
-  <style>
-    :root {
-      --bg-color: #0b0f19;
-      --header-bg: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
-      --header-shadow-3d: 0 12px 28px -6px rgba(0, 0, 0, 0.7), 0 4px 10px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-      --header-border-bottom: rgba(0, 0, 0, 0.6);
-      
-      --card-bg: rgba(20, 27, 44, 0.85);
-      --inset-bg: rgba(0, 0, 0, 0.4);
-      --text-color: #f8fafc;
-      --text-muted: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --primary-color: #6366f1;
-      
-      --shadow-inset: inset 0 5px 12px rgba(0, 0, 0, 0.6), inset 0 1px 3px rgba(0, 0, 0, 0.5);
-      --shadow-drop: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-      --text-shadow-3d: 0 2px 4px rgba(0, 0, 0, 0.5);
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StarCat Client · Gerador de Resource Pack</title>
+<link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png?ex=6ad298c6&is=6ad14746&hm=9f71ab2d107e4075c928682ffbb2b1044043f6002fe1ab6f7827854f764486fb&">
+<link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png?ex=6ad298c6&is=6ad14746&hm=9f71ab2d107e4075c928682ffbb2b1044043f6002fe1ab6f7827854f764486fb&">
 
-    [data-theme="light"] {
-      --bg-color: #e2e8f0;
-      --header-bg: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-      --header-shadow-3d: 0 12px 24px -6px rgba(0, 0, 0, 0.2), 0 4px 8px -2px rgba(0, 0, 0, 0.12), inset 0 1px 0 #ffffff;
-      --header-border-bottom: rgba(0, 0, 0, 0.15);
-      
-      --card-bg: rgba(255, 255, 255, 0.9);
-      --inset-bg: rgba(0, 0, 0, 0.06);
-      --text-color: #0f172a;
-      --text-muted: #64748b;
-      --border-color: rgba(0, 0, 0, 0.08);
-      
-      --shadow-inset: inset 0 4px 10px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.1);
-      --shadow-drop: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
-      --text-shadow-3d: 0 1px 2px rgba(255, 255, 255, 0.8);
-    }
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(circle at 50% 0%, #450a0a 0%, #1c0a0a 45%, #0a0202 100%);
+    background-attachment: fixed;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    color: #f1f5f9;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  header { text-align: center; margin-bottom: 2rem; }
+  header h1 {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #fecaca, #ef4444, #b91c1c);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 0.4rem;
+  }
+  header p { color: #a1a1aa; font-size: 0.85rem; letter-spacing: 1.5px; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent !important;
-      outline: none !important;
-      user-select: none;
-    }
+  .card {
+    background: rgba(23, 8, 8, 0.7);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    border-radius: 20px;
+    padding: 1.5rem;
+    backdrop-filter: blur(12px);
+    margin-bottom: 1.5rem;
+  }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      overflow-x: hidden;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
+  .profile-row {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .profile-info { display: flex; align-items: center; gap: 1rem; }
+  .avatar {
+    width: 62px; height: 62px; border-radius: 50%;
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 1.4rem;
+    text-transform: uppercase;
+    box-shadow: 0 6px 20px -4px #dc2626;
+  }
+  .profile-info .nick { font-size: 1.3rem; font-weight: 800; letter-spacing: 1.5px; color: #fee2e2; }
+  .profile-info .email { font-size: 0.78rem; color: #71717a; letter-spacing: 0.8px; }
 
-    /* Header 3D */
-    header.top-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      background: var(--header-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--header-border-bottom);
-      box-shadow: var(--header-shadow-3d);
-      z-index: 100;
-    }
+  .btn {
+    color: #fff; border: none;
+    padding: 0.75rem 1.6rem;
+    border-radius: 50px;
+    font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 1.2px; cursor: pointer;
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    box-shadow: 0 6px 18px -4px #dc2626;
+    transition: transform 0.18s, box-shadow 0.18s;
+    text-transform: uppercase;
+    font-family: inherit;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -6px #dc2626; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn.ghost {
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.5);
+    color: #fca5a5;
+    box-shadow: none;
+  }
+  .btn.ghost:hover { background: rgba(248,113,113,0.25); color: #fecaca; }
 
-    .icon-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-color);
-      padding: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.9;
-      transition: transform 0.15s ease, opacity 0.2s;
-    }
+  .section-title {
+    font-size: 0.85rem; font-weight: 800; letter-spacing: 2px;
+    text-transform: uppercase; color: #fca5a5;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-title::before {
+    content: ''; width: 4px; height: 16px;
+    background: linear-gradient(180deg, #ef4444, #b91c1c);
+    border-radius: 2px;
+  }
 
-    .icon-btn:hover {
-      opacity: 1;
-    }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
 
-    .icon-btn:active {
-      transform: scale(0.85);
-    }
+  .item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(circle at 30% 20%, #2a1414, #170808);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(248,113,113,0.18);
+    display: flex; flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .item:hover { transform: translateY(-3px); box-shadow: 0 14px 28px -6px #dc2626, 0 0 0 2px rgba(248,113,113,0.4); }
+  .item.locked { opacity: 0.55; }
+  .item.locked::after {
+    content: '🔒';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -60%);
+    font-size: 2.2rem;
+    z-index: 3;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9));
+  }
+  .item .thumb {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0.5rem;
+    overflow: hidden;
+  }
+  .item .thumb img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(248,113,113,0.35));
+  }
+  .item.wing .thumb img { object-fit: cover; width: 100%; height: 100%; }
+  .item .name {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    text-align: center;
+    background: linear-gradient(to top, rgba(10,2,2,0.95), rgba(10,2,2,0.7));
+    color: #f8fafc;
+    z-index: 2;
+  }
+  .item .type-tag {
+    position: absolute;
+    top: 0.5rem; left: 0.5rem;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.62rem; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase;
+    border-radius: 6px;
+    background: rgba(220, 38, 38, 0.9);
+    color: #fff;
+    z-index: 2;
+  }
+  .item .acquire-btn {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 0.6rem;
+    font-size: 0.72rem; font-weight: 800;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    border: none; cursor: pointer;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    font-family: inherit;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 4;
+  }
+  .item:hover .acquire-btn { opacity: 1; }
+  .item.locked .acquire-btn { display: none; }
+  .item .acquire-btn:hover { filter: brightness(1.15); }
 
-    .top-middle-title {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.3px;
-      color: var(--text-color);
-      text-shadow: var(--text-shadow-3d);
-      white-space: nowrap;
-    }
+  .summary {
+    display: flex; flex-wrap: wrap; gap: 0.6rem;
+    margin-top: 1rem;
+  }
+  .chip {
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.35);
+    color: #fca5a5;
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .chip .num { color: #fff; margin-left: 0.4rem; }
 
-    /* Container Rebaixado */
-    .main-container {
-      margin-top: 68px;
-      padding: 24px 16px;
-      width: 100%;
-      max-width: 480px;
-    }
+  .gen-row {
+    display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+  }
 
-    .inset-well {
-      background: var(--inset-bg);
-      box-shadow: var(--shadow-inset);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 20px;
-    }
+  .status {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    min-height: 1.4rem;
+  }
+  .status.error { color: #f87171; }
+  .status.success { color: #4ade80; }
+  .status.info { color: #a1a1aa; }
 
-    /* Grid 3x4 (3 Botões por Linha, 4 Linhas = 12 Botões) */
-    .grid-3x4 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
+  .hidden { display: none !important; }
 
-    .btn-card {
-      background-color: var(--primary-color);
-      color: #ffffff;
-      border: none;
-      padding: 16px 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      border-radius: 14px;
-      cursor: pointer;
-      box-shadow: 0 6px 16px -4px var(--primary-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-align: center;
-      transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .btn-card:active {
-      transform: scale(0.92);
-      box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
-    }
-
-    .btn-card:hover {
-      filter: brightness(1.1);
-    }
-
-    /* Configurações Full Screen */
-    .config-fullscreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: var(--bg-color);
-      backdrop-filter: blur(25px);
-      z-index: 1000;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 24px;
-      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .config-fullscreen.active {
-      display: flex;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.96); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 24px;
-      right: 28px;
-      background: transparent;
-      border: none;
-      color: var(--text-color);
-      font-size: 2.2rem;
-      cursor: pointer;
-      line-height: 1;
-      opacity: 0.7;
-      transition: transform 0.2s ease, opacity 0.2s;
-    }
-
-    .close-btn:hover {
-      opacity: 1;
-    }
-
-    .close-btn:active {
-      transform: scale(0.85) rotate(90deg);
-    }
-
-    .config-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 36px 32px;
-      width: 100%;
-      max-width: 440px;
-      box-shadow: var(--shadow-drop);
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
-    }
-
-    .fullscreen-header {
-      font-size: 1.6rem;
-      font-weight: 700;
-      text-align: center;
-      letter-spacing: -0.5px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .field-label {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .inset-panel {
-      background: var(--inset-bg);
-      box-shadow: var(--shadow-inset);
-      border: 1px solid var(--border-color);
-      padding: 6px;
-      border-radius: 16px;
-    }
-
-    .theme-toggle-group {
-      display: flex;
-      gap: 4px;
-    }
-
-    .theme-opt {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      font-weight: 600;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .theme-opt:active {
-      transform: scale(0.95);
-    }
-
-    .theme-opt.active {
-      background: var(--card-bg);
-      color: var(--text-color);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .palette-group {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 16px;
-    }
-
-    .swatch {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 3px solid transparent;
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .swatch:active {
-      transform: scale(0.85) !important;
-    }
-
-    .swatch.active {
-      border-color: var(--text-color);
-      transform: scale(1.15);
-    }
-
-    .custom-color-wrapper {
-      position: relative;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid var(--border-color);
-      transition: transform 0.2s ease;
-    }
-
-    .custom-color-wrapper:active {
-      transform: scale(0.85);
-    }
-
-    .custom-color-wrapper input[type="color"] {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-
-    .lang-chips {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      padding: 6px;
-    }
-
-    .chip-opt {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      padding: 12px 8px;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .chip-opt .flag-icon {
-      font-size: 1.2rem;
-      line-height: 1;
-    }
-
-    .chip-opt:active {
-      transform: scale(0.92);
-    }
-
-    .chip-opt.active {
-      background: var(--primary-color);
-      color: #ffffff;
-      box-shadow: 0 6px 18px -4px var(--primary-color);
-    }
-  </style>
+  .spinner {
+    width: 42px; height: 42px;
+    border: 3px solid rgba(248, 113, 113, 0.25);
+    border-top-color: #f87171;
+    border-radius: 50%;
+    margin: 2rem auto;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
 
-  <!-- Header 3D -->
-  <header class="top-bar">
-    <button class="icon-btn" onclick="openConfig()" aria-label="Configurações">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="12" cy="5" r="2.2"/>
-        <circle cx="12" cy="12" r="2.2"/>
-        <circle cx="12" cy="19" r="2.2"/>
-      </svg>
-    </button>
-    <div class="top-middle-title" id="top-title">Crie seu Addon</div>
+<div class="wrap">
+
+  <header>
+    <h1>✦ StarCat Client ✦</h1>
+    <p>gerador de resource pack personalizado</p>
   </header>
 
-  <!-- Main Container -->
-  <main class="main-container">
-    <div class="inset-well">
-      <!-- Grid 3x4 (12 Botões) -->
-      <div class="grid-3x4">
-        
-        <!-- Linha 1 -->
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 1</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 2</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 3</span>
-        </button>
-
-        <!-- Linha 2 -->
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 4</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 5</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 6</span>
-        </button>
-
-        <!-- Linha 3 -->
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 7</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 8</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 9</span>
-        </button>
-
-        <!-- Linha 4 -->
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 10</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 11</span>
-        </button>
-        <button class="btn-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>Item 12</span>
-        </button>
-
-      </div>
-    </div>
-  </main>
-
-  <!-- Tela Full Screen Configurações -->
-  <div class="config-fullscreen" id="config-fullscreen">
-    <button class="close-btn" onclick="closeConfig()">&times;</button>
-    
-    <div class="config-card">
-      <div class="fullscreen-header" id="txt-header">Configurações</div>
-
-      <!-- Tema -->
-      <div class="field">
-        <span class="field-label" id="lbl-theme">Tema</span>
-        <div class="inset-panel theme-toggle-group">
-          <button class="theme-opt active" id="btn-theme-dark" onclick="selectTheme('dark')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            Dark
-          </button>
-          <button class="theme-opt" id="btn-theme-light" onclick="selectTheme('light')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-            Light
-          </button>
-        </div>
-      </div>
-
-      <!-- Paleta -->
-      <div class="field">
-        <span class="field-label" id="lbl-color">Cor da Paleta</span>
-        <div class="inset-panel palette-group">
-          <div class="swatch active" style="background: #6366f1;" onclick="selectColor('#6366f1', this)"></div>
-          <div class="swatch" style="background: #10b981;" onclick="selectColor('#10b981', this)"></div>
-          <div class="swatch" style="background: #f59e0b;" onclick="selectColor('#f59e0b', this)"></div>
-          <div class="swatch" style="background: #ec4899;" onclick="selectColor('#ec4899', this)"></div>
-          <div class="swatch" style="background: #3b82f6;" onclick="selectColor('#3b82f6', this)"></div>
-          
-          <div class="custom-color-wrapper" title="Escolher Cor">
-            <input type="color" value="#6366f1" onchange="selectColor(this.value, this.parentElement)">
-          </div>
-        </div>
-      </div>
-
-      <!-- Idioma -->
-      <div class="field">
-        <span class="field-label" id="lbl-lang">Idioma</span>
-        <div class="inset-panel lang-chips">
-          <button class="chip-opt active" onclick="selectLang('pt', this)">
-            <span class="flag-icon">🇧🇷</span> PT
-          </button>
-          <button class="chip-opt" onclick="selectLang('en', this)">
-            <span class="flag-icon">🇺🇸</span> EN
-          </button>
-          <button class="chip-opt" onclick="selectLang('es', this)">
-            <span class="flag-icon">🇪🇸</span> ES
-          </button>
-        </div>
-      </div>
-
-    </div>
+  <div id="loadingBox">
+    <div class="spinner"></div>
+    <p style="text-align:center;color:#f87171;letter-spacing:1.5px;font-size:0.9rem;">Carregando...</p>
   </div>
 
-  <script>
-    function openConfig() {
-      document.getElementById('config-fullscreen').classList.add('active');
+  <div id="notLogged" class="card hidden" style="text-align:center;">
+    <div class="section-title" style="justify-content:center;">Não autenticado</div>
+    <p style="color:#a1a1aa;font-size:0.9rem;margin-bottom:1rem;">
+      Faça login no <strong style="color:#fca5a5;">site oficial do StarCat Client</strong> para continuar.
+    </p>
+    <p style="color:#71717a;font-size:0.78rem;">
+      Este gerador usa a mesma conta Firebase do site principal.
+    </p>
+  </div>
+
+  <div id="mainContent" class="hidden">
+
+    <div class="card">
+      <div class="profile-row">
+        <div class="profile-info">
+          <div class="avatar" id="avatar">?</div>
+          <div>
+            <div class="nick" id="nick">—</div>
+            <div class="email" id="email">—</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button class="btn ghost" id="reloadBtn">↻ Recarregar</button>
+          <button class="btn ghost" id="logoutBtn">Sair</button>
+        </div>
+      </div>
+
+      <div class="summary" id="summary"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Meus Cosméticos · Inventário Completo</div>
+      <div class="grid" id="itemsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Gerar Resource Pack</div>
+      <p style="color:#a1a1aa;font-size:0.85rem;line-height:1.5;margin-bottom:1rem;">
+        O pack será gerado com <strong style="color:#fca5a5;">apenas os itens que você possui</strong>.
+        O <code style="color:#fca5a5;">manifest.json</code> terá os dropdowns correspondentes e
+        todos os <code style="color:#fca5a5;">query.is_name_any('&lt;seu_nick&gt;')</code> usando o seu nick.
+      </p>
+      <div class="gen-row">
+        <button class="btn" id="genBtn">⬇ Baixar .mcpack</button>
+        <button class="btn ghost" id="previewBtn">👁 Ver manifest.json</button>
+      </div>
+      <div class="status" id="status"></div>
+      <pre id="manifestPreview" class="hidden" style="margin-top:1rem;background:rgba(10,2,2,0.8);border:1px solid rgba(248,113,113,0.25);border-radius:12px;padding:1rem;font-size:0.72rem;line-height:1.4;overflow:auto;max-height:400px;color:#fca5a5;"></pre>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+// ================== FIREBASE (mesmo do site) ==================
+const firebaseConfig = {
+  apiKey: "AIzaSyCtXluQl2mtkehl9FICeJBPbP-_A3YRhzk",
+  authDomain: "testgyyyy.firebaseapp.com",
+  projectId: "testgyyyy",
+  storageBucket: "testgyyyy.firebasestorage.app",
+  messagingSenderId: "393006784345",
+  appId: "1:393006784345:web:df958ca70ac79ccc603648",
+  measurementId: "G-5RY35J0MQ6"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ================== MAPA DE ITENS ==================
+// Fonte única de verdade — bate com o site original + adiciona trails/coroa
+const ITEM_DB = {
+  wings_gold:       { name:'Gold Wings',       type:'wings',  src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560347725592133732/file_4.gif?ex=6ad2628f&is=6ad1110f&hm=c83097bac479a977bcec22d421b336322ae14b55672ec9d9409dff57dad845c3&', key:'gold' },
+  wings_iron:       { name:'Iron Wings',       type:'wings',  src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560347798963224586/file_3.gif?ex=6ad262a1&is=6ad11121&hm=b342cfebb2fbb8884532921e82c443e4d5dea168c080471c99d28fffae16bd4e&', key:'iron' },
+  wings_diamond:    { name:'Diamond Wings',    type:'wings',  src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560347479306797086/file_5.gif?ex=6ad26254&is=6ad110d4&hm=c4041bfadd12f71ebd0d4f7a8b79a01c98f9f2958404cafb9d74d06df5e40c76&', key:'diamond' },
+  wings_netherite:  { name:'Netherite Wings',  type:'wings',  src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560347692591222905/file_2.gif?ex=6ad26287&is=6ad11107&hm=1f71bf989c9b32fb84344d6b5ce8fc8e9a73cede21eb83dfbfcfb913d018e47a&', key:'netherite' },
+  wings_starcat:    { name:'Starcat Wings',    type:'wings',  src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560347855837995069/file_1.gif?ex=6ad262ae&is=6ad1112e&hm=f10143511050b4bf6db0da16ccd80cdfbd3d197ef0e72162b7ac687a3fa4520d&', key:'starcat' },
+  shield_padrao:    { name:'Escudo Padrão',    type:'shield', src:'https://cdn.discordapp.com/attachments/1462160007893356677/1560416636857622609/file_2.png?ex=6ad2a2bd&is=6ad1513d&hm=02f4d2431ecd08f8bb9c44e60131fcec337b1b79e719ca9179ed8eadabec24b4&', key:'default' },
+  shield_starcat:   { name:'Escudo StarCat',   type:'shield', src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560414696182517911/file.png?ex=6ad2a0ee&is=6ad14f6e&hm=d792c40de22db9d28b947d527daf77c3a36d91a72855e32e812fa5e82ffcceef&', key:'shield1' },
+  shield_floral:    { name:'Escudo Floral',    type:'shield', src:'https://cdn.discordapp.com/attachments/1436727187448397914/1560415188178698310/file_1.png?ex=6ad2a163&is=6ad14fe3&hm=106c2e7ac7f356694cd3d843e55e009b241f72d0ea2f0db2bd6a8177d25c7f1a&', key:'shield1' },
+  head_coroa_flores:{ name:'Coroa de Flores',  type:'head',   src:'https://cdn.discordapp.com/attachments/1462160007893356677/1560457437708947456/file_3_1.png?ex=6ad2c8bd&is=6ad1773d&hm=18d8fc27b0a1018c003c167ebe17e5c5120ed406b7451e0f0eebb257fd384d09&', key:'flower_crown' },
+  trail_heart:      { name:'Trail Heart',      type:'trail',  src:'https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png?ex=6ad298c6&is=6ad14746&hm=9f71ab2d107e4075c928682ffbb2b1044043f6002fe1ab6f7827854f764486fb&', key:'heart' },
+  trail_flame:      { name:'Trail Flame',      type:'trail',  src:'https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png?ex=6ad298c6&is=6ad14746&hm=9f71ab2d107e4075c928682ffbb2b1044043f6002fe1ab6f7827854f764486fb&', key:'flame' },
+};
+
+const TYPE_LABELS = { wings:'Costas', shield:'Escudo', head:'Cabeça', trail:'Partícula', items:'Outro' };
+
+// ================== ESTADO ==================
+let currentUser = null;
+let playerNick = '';
+let inventory = { costa:[], shield:[], head:[], items:[], trails:[] };
+
+// ================== HELPERS ==================
+function initials(n){ if(!n) return '?'; const p=n.trim().split(/\s+/); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():n.slice(0,2).toUpperCase(); }
+function nickKey(n){ return n.toLowerCase().trim().replace(/\s+/g,' '); }
+
+// ================== DOM ==================
+const loadingBox = document.getElementById('loadingBox');
+const notLogged  = document.getElementById('notLogged');
+const mainContent= document.getElementById('mainContent');
+const avatarEl   = document.getElementById('avatar');
+const nickEl     = document.getElementById('nick');
+const emailEl    = document.getElementById('email');
+const summaryEl  = document.getElementById('summary');
+const itemsGrid  = document.getElementById('itemsGrid');
+const genBtn     = document.getElementById('genBtn');
+const previewBtn = document.getElementById('previewBtn');
+const reloadBtn  = document.getElementById('reloadBtn');
+const logoutBtn  = document.getElementById('logoutBtn');
+const statusEl   = document.getElementById('status');
+const manifestPreview = document.getElementById('manifestPreview');
+
+function showOnly(el){
+  [loadingBox, notLogged, mainContent].forEach(x=>x.classList.add('hidden'));
+  if(el) el.classList.remove('hidden');
+}
+
+// ================== AUTH ==================
+auth.onAuthStateChanged(async user => {
+  if(!user){
+    currentUser = null; playerNick = '';
+    showOnly(notLogged);
+    return;
+  }
+  currentUser = user;
+  showOnly(loadingBox);
+
+  let nick = '';
+  try{
+    const snap = await db.collection('users').doc(user.uid).get();
+    if(snap.exists) nick = snap.data().nick || '';
+  }catch(e){}
+
+  if(!nick){
+    // Usuário sem nick no DB — pede para definir no site principal
+    showOnly(notLogged);
+    notLogged.querySelector('p').innerHTML =
+      'Sua conta não tem um <strong style="color:#fca5a5;">nick definido</strong>. Defina no site principal primeiro.';
+    return;
+  }
+
+  playerNick = nick;
+  await loadInventory();
+  renderProfile();
+  renderItems();
+  showOnly(mainContent);
+});
+
+async function loadInventory(){
+  inventory = { costa:[], shield:[], head:[], items:[], trails:[] };
+  try{
+    const snap = await db.collection('users').doc(currentUser.uid).get();
+    if(snap.exists){
+      const d = snap.data();
+      inventory.costa  = Array.isArray(d.costa)  ? d.costa  : [];
+      inventory.shield = Array.isArray(d.shield) ? d.shield : [];
+      inventory.head   = Array.isArray(d.head)   ? d.head   : [];
+      inventory.items  = Array.isArray(d.items)  ? d.items  : [];
+      inventory.trails = Array.isArray(d.trails) ? d.trails : [];
     }
+  }catch(e){ console.warn(e); }
+}
 
-    function closeConfig() {
-      document.getElementById('config-fullscreen').classList.remove('active');
+function isOwned(itemId){
+  if(itemId.startsWith('wings_'))  return inventory.costa.includes(itemId);
+  if(itemId.startsWith('shield_')) return inventory.shield.includes(itemId);
+  if(itemId.startsWith('head_'))   return inventory.head.includes(itemId);
+  if(itemId.startsWith('trail_'))  return inventory.trails.includes(itemId);
+  return inventory.items.includes(itemId);
+}
+
+// ================== RENDER ==================
+function renderProfile(){
+  avatarEl.textContent = initials(playerNick);
+  nickEl.textContent = playerNick;
+  emailEl.textContent = currentUser.email || '—';
+
+  const owned = Object.keys(ITEM_DB).filter(isOwned);
+  const counts = { wings:0, shield:0, head:0, trail:0 };
+  owned.forEach(id=>{
+    const t = ITEM_DB[id].type;
+    if(t in counts) counts[t]++;
+  });
+
+  summaryEl.innerHTML = `
+    <span class="chip">Total <span class="num">${owned.length}</span></span>
+    <span class="chip">Costas <span class="num">${counts.wings}</span></span>
+    <span class="chip">Escudos <span class="num">${counts.shield}</span></span>
+    <span class="chip">Cabeça <span class="num">${counts.head}</span></span>
+    <span class="chip">Trails <span class="num">${counts.trail}</span></span>
+  `;
+}
+
+function renderItems(){
+  itemsGrid.innerHTML = '';
+  const order = ['wings','shield','head','trail'];
+  const all = Object.entries(ITEM_DB).sort((a,b)=>{
+    const oa = order.indexOf(a[1].type), ob = order.indexOf(b[1].type);
+    if(oa !== ob) return oa - ob;
+    return a[1].name.localeCompare(b[1].name);
+  });
+
+  all.forEach(([id, meta])=>{
+    const owned = isOwned(id);
+    const el = document.createElement('div');
+    el.className = 'item' + (meta.type==='wings'?' wing':'') + (owned?'':' locked');
+    el.innerHTML = `
+      <span class="type-tag">${TYPE_LABELS[meta.type]||meta.type}</span>
+      <div class="thumb"><img src="${meta.src}" alt="${meta.name}" loading="lazy"></div>
+      <div class="name">${owned ? meta.name : '???'}</div>
+      ${owned ? `<button class="acquire-btn" data-id="${id}">Adquirir</button>` : ''}
+    `;
+    itemsGrid.appendChild(el);
+  });
+
+  itemsGrid.querySelectorAll('.acquire-btn').forEach(b=>{
+    b.addEventListener('click', ()=> handleAcquire(b.dataset.id));
+  });
+}
+
+function handleAcquire(itemId){
+  const meta = ITEM_DB[itemId];
+  statusEl.className = 'status info';
+  statusEl.textContent = `Preparando pacote com "${meta.name}"...`;
+  generatePack([itemId], meta.name);
+}
+
+// ================== GERADOR DO PACK ==================
+function buildManifest(ownedItems){
+  const nick = playerNick;
+
+  // Coleta settings dinâmicos
+  const settings = [];
+
+  // Label de agradecimento
+  settings.push({
+    type: "label",
+    text: `§l§c --- [ §rObrigado por usar StarCat Client, §e${nick}§c ] ---`
+  });
+
+  // Escudos (se tiver algum)
+  const shieldItems = ownedItems.filter(i=>ITEM_DB[i].type==='shield');
+  if(shieldItems.length > 0){
+    const opts = [{ name:"default", text:"§lPadrão" }];
+    shieldItems.forEach(id=>{
+      if(ITEM_DB[id].key === 'default') return;
+      opts.push({ name: ITEM_DB[id].key, text: `§c§l${ITEM_DB[id].name}` });
+    });
+    settings.push({
+      type: "dropdown",
+      text: "§c§l ▬▬▬▬▬▬▬ Escudo  ▬▬▬▬▬▬▬\n\n\n",
+      name: "eduh:shield_skin",
+      default: "default",
+      options: opts
+    });
+  }
+
+  // Wings
+  const wingItems = ownedItems.filter(i=>ITEM_DB[i].type==='wings');
+  if(wingItems.length > 0){
+    const opts = [{ name:"off", text:"§lOff" }];
+    wingItems.forEach(id=>{
+      opts.push({ name: ITEM_DB[id].key, text: `§l${ITEM_DB[id].name.replace(' Wings','')}` });
+    });
+    settings.push({
+      type: "dropdown",
+      text: "§c§l ▬▬▬▬▬▬▬ Wings  ▬▬▬▬▬▬▬\n\n\n",
+      name: "eduh:wings_select",
+      default: "off",
+      options: opts
+    });
+  }
+
+  // Trails
+  const trailItems = ownedItems.filter(i=>ITEM_DB[i].type==='trail');
+  if(trailItems.length > 0){
+    const opts = [{ name:"off", text:"§lOff" }];
+    trailItems.forEach(id=>{
+      opts.push({ name: ITEM_DB[id].key, text: `§l${ITEM_DB[id].name.replace('Trail ','')}` });
+    });
+    settings.push({
+      type: "dropdown",
+      text: "§c§l ▬▬▬▬▬▬▬ Trails  ▬▬▬▬▬▬▬\n\n\n",
+      name: "eduh:trails_select",
+      default: "off",
+      options: opts
+    });
+  }
+
+  // Head
+  const headItems = ownedItems.filter(i=>ITEM_DB[i].type==='head');
+  if(headItems.length > 0){
+    const opts = [{ name:"default", text:"§lDefault" }];
+    headItems.forEach(id=>{
+      opts.push({ name: ITEM_DB[id].key, text: `§a§l${ITEM_DB[id].name}` });
+    });
+    settings.push({
+      type: "dropdown",
+      text: "§c§l ▬▬▬▬▬▬▬ Head  ▬▬▬▬▬▬▬\n\n\n",
+      name: "eduh:head_select",
+      default: "default",
+      options: opts
+    });
+  }
+
+  // Label final
+  settings.push({ type:"label", text:"§l§c --- [ §rCosméticos§c ] ---" });
+  settings.push({
+    type:"toggle",
+    text:"§l§cBotas:§r§o§7 Ativa ou desativa as botas cosméticas.",
+    name:"eduh:cosmetic.boots",
+    default:false
+  });
+
+  // UUIDs fixos para reprodutibilidade
+  const HEADER_UUID = "7f3b81d2-9a4c-4e81-b30f-21d459038e12";
+  const MODULE_UUID = "a5c924e1-8073-4f92-96cb-8d1e349208fa";
+
+  return {
+    format_version: 3,
+    metadata: {
+      url: "https://www.curseforge.com/minecraft-bedrock/texture-packs/adaptive_cape",
+      authors: ["Athan213"]
+    },
+    header: {
+      description: `§o§7Resource pack gerado para §c${nick}§7 · §oStarCat Client`,
+      name: "§cStarCat Client",
+      uuid: HEADER_UUID,
+      min_engine_version: "1.21.120",
+      version: "1.5.0"
+    },
+    modules: [
+      { type: "resources", uuid: MODULE_UUID, version: "1.5.0" }
+    ],
+    settings: settings
+  };
+}
+
+function buildEntityJson(ownedItems){
+  const nick = playerNick;
+
+  // Texturas dinâmicas
+  const textures = {
+    default: "textures/entity/steve",
+    cape: "textures/entity/cape_invisible",
+    flower_wreath: "textures/head/flower_wreath",
+    wings_off: "textures/cosmetics/off"
+  };
+
+  const wingItems = ownedItems.filter(i=>ITEM_DB[i].type==='wings');
+  const headItems = ownedItems.filter(i=>ITEM_DB[i].type==='head');
+
+  wingItems.forEach(id=>{
+    if(id === 'wings_starcat') textures.starcat_wings = "textures/cosmetics/starcat_wings";
+    if(id === 'wings_iron')    textures.iron_wings    = "textures/cosmetics/iron_wings";
+    if(id === 'wings_gold')    textures.gold_wings    = "textures/cosmetics/gold_wings";
+    if(id === 'wings_diamond') textures.diamond_wings = "textures/cosmetics/diamond_wings";
+    if(id === 'wings_netherite') textures.netherite_wings = "textures/cosmetics/netherite_wings";
+  });
+
+  // Particle effects (só os que o jogador tem)
+  const particleEffects = {};
+  if(ownedItems.includes('trail_heart')) particleEffects.os_trail_heart = "os:trail_heart";
+  if(ownedItems.includes('trail_flame')) particleEffects.os_trail_flame = "os:trail_flame";
+
+  // Animate condicional
+  const animate = [
+    "root",
+    {
+      "wings_fly": `query.is_name_any('${nick}') && !query.is_sneaking && !query.is_pack_setting_selected('eduh:wings_select', 'off')`
+    },
+    {
+      "wings_idle": `query.is_name_any('${nick}') && query.is_sneaking && !query.is_pack_setting_selected('eduh:wings_select', 'off')`
     }
+  ];
 
-    function selectTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      document.getElementById('btn-theme-dark').classList.toggle('active', theme === 'dark');
-      document.getElementById('btn-theme-light').classList.toggle('active', theme === 'light');
+  if(ownedItems.includes('trail_heart')){
+    animate.push({
+      "os_trail_heart": `query.is_pack_setting_selected('eduh:trails_select', 'heart') && (math.abs(query.position_delta(0)) > 0.01 || math.abs(query.position_delta(2)) > 0.01) && query.is_alive && !variable.map_face_icon`
+    });
+  }
+  if(ownedItems.includes('trail_flame')){
+    animate.push({
+      "os_trail_flame": `query.is_pack_setting_selected('eduh:trails_select', 'flame') && (math.abs(query.position_delta(0)) > 0.01 || math.abs(query.position_delta(2)) > 0.01) && query.is_alive && !variable.map_face_icon`
+    });
+  }
+
+  // Render controllers condicionais
+  const renderControllers = [
+    { "controller.render.player.first_person_spectator": "variable.is_first_person && query.is_spectator" },
+    { "controller.render.player.third_person_spectator": "!variable.is_first_person && !variable.map_face_icon && query.is_spectator" },
+    { "controller.render.player.first_person": "variable.is_first_person && !query.is_spectator" },
+    { "controller.render.player.third_person": "!variable.is_first_person && !variable.map_face_icon && !query.is_spectator" },
+    { "controller.render.player.map": "variable.map_face_icon" }
+  ];
+
+  if(ownedItems.some(i=>ITEM_DB[i].type==='shield')){
+    renderControllers.push({ "controller.render.shield_default": "query.is_local_player" });
+  }
+  if(wingItems.length > 0){
+    renderControllers.push({
+      "controller.render.star_cosmetic": `query.is_name_any('${nick}') && !variable.is_first_person && !query.is_spectator`
+    });
+  }
+  if(headItems.length > 0){
+    renderControllers.push({
+      "controller.render.head_cosmetic": `query.is_name_any('${nick}') && !variable.is_first_person && !query.is_spectator`
+    });
+  }
+
+  return {
+    format_version: "1.10.0",
+    "minecraft:client_entity": {
+      description: {
+        identifier: "minecraft:player",
+        min_engine_version: "1.8.0",
+        materials: {
+          default: "entity_alphatest",
+          cape: "entity_alphatest",
+          animated: "player_animated",
+          spectator: "player_spectator"
+        },
+        textures: textures,
+        geometry: {
+          default: "geometry.humanoid.custom",
+          cape: "geometry.cape",
+          wings: "geometry.wings",
+          flower_wreath: "geometry.flower_wreath"
+        },
+        particle_effects: particleEffects,
+        scripts: {
+          scale: "0.9375",
+          variables: {
+            "variable.attack_time": "public",
+            "variable.item_use_normalized": "public"
+          },
+          initialize: [
+            "v.is_holding_right = 0.0;",
+            "v.is_blinking = 0.0;",
+            "v.last_blink_time = 0.0;",
+            "v.hand_bob = 0.0;"
+          ],
+          pre_animation: [
+            "v.helmet_layer_visible = !query.has_head_gear;",
+            "v.leg_layer_visible = 1.0;",
+            "v.boot_layer_visible = 1.0;",
+            "v.chest_layer_visible = 1.0;",
+            "v.hand_bob = query.life_time < 0.01 ? 0.0 : v.hand_bob + ((query.is_on_ground && query.is_alive ? math.clamp(math.sqrt(math.pow(query.position_delta(0), 2.0) + math.pow(query.position_delta(2), 2.0)), 0.0, 0.1) : 0.0) - v.hand_bob) * 0.02;",
+            "v.map_angle = math.clamp(1 - v.player_x_rotation / 45.1, 0.0, 1.0);",
+            "v.item_use_duration = query.main_hand_item_use_duration > 0.0 ? (query.main_hand_item_max_duration - (query.main_hand_item_use_duration - query.frame_alpha + 1.0)) : 0.0;",
+            "v.item_use_normalized = query.main_hand_item_use_duration / query.main_hand_item_max_duration;",
+            "v.riding_y_offset = query.is_riding_any_entity_of_type('minecraft:minecart', 'minecraft:boat', 'minecraft:chest_boat', 'minecraft:strider') ? -3.0 : 0.0;"
+          ],
+          animate: animate,
+          should_update_effects_offscreen: "1.0"
+        },
+        animations: {
+          root: "controller.animation.player.root",
+          base_controller: "controller.animation.player.base",
+          hudplayer: "controller.animation.player.hudplayer",
+          humanoid_base_pose: "animation.humanoid.base_pose",
+          look_at_target: "controller.animation.humanoid.look_at_target",
+          look_at_target_ui: "animation.player.look_at_target.ui",
+          look_at_target_default: "animation.humanoid.look_at_target.default",
+          look_at_target_gliding: "animation.humanoid.look_at_target.gliding",
+          look_at_target_swimming: "animation.humanoid.look_at_target.swimming",
+          look_at_target_inverted: "animation.player.look_at_target.inverted",
+          cape: "animation.player.cape",
+          "move.arms": "animation.player.move.arms",
+          "move.legs": "animation.player.move.legs",
+          swimming: "animation.player.swim",
+          "swimming.no_right_arm": "animation.player.swim.no_right_arm",
+          "swimming.legs": "animation.player.swim.legs",
+          crawling: "animation.player.crawl",
+          "crawling.no_right_arm": "animation.player.crawl.no_right_arm",
+          "crawling.legs": "animation.player.crawl.legs",
+          "riding.root": "animation.player.riding.root",
+          "riding.arms": "animation.player.riding.arms",
+          "riding.legs": "animation.player.riding.legs",
+          holding: "animation.player.holding",
+          holding_heavy_core: "animation.player.holding_heavy_core",
+          brandish_spear: "animation.humanoid.brandish_spear",
+          holding_spyglass: "animation.humanoid.holding_spyglass",
+          charging: "animation.humanoid.charging",
+          "attack.positions": "animation.player.attack.positions",
+          "attack.rotations": "animation.player.attack.rotations",
+          sneaking: "animation.player.sneaking",
+          bob: "animation.player.bob",
+          damage_nearby_mobs: "animation.humanoid.damage_nearby_mobs",
+          bow_and_arrow: "animation.humanoid.bow_and_arrow",
+          use_item_progress: "animation.humanoid.use_item_progress",
+          skeleton_attack: "animation.skeleton.attack",
+          sleeping: "animation.player.sleeping",
+          first_person_base_pose: "animation.player.first_person.base_pose",
+          first_person_empty_hand: "animation.player.first_person.empty_hand",
+          first_person_swap_item: "animation.player.first_person.swap_item",
+          first_person_shield_block: "animation.player.first_person.shield_block",
+          first_person_attack_controller: "controller.animation.player.first_person_attack",
+          first_person_attack_rotation: "animation.player.first_person.attack_rotation",
+          first_person_vr_attack_rotation: "animation.player.first_person.vr_attack_rotation",
+          first_person_walk: "animation.player.first_person.walk",
+          first_person_map_controller: "controller.animation.player.first_person_map",
+          first_person_map_hold: "animation.player.first_person.map_hold",
+          first_person_map_hold_attack: "animation.player.first_person.map_hold_attack",
+          first_person_map_hold_off_hand: "animation.player.first_person.map_hold_off_hand",
+          first_person_map_hold_main_hand: "animation.player.first_person.map_hold_main_hand",
+          first_person_crossbow_equipped: "animation.player.first_person.crossbow_equipped",
+          first_person_breathing_bob: "animation.player.first_person.breathing_bob",
+          third_person_crossbow_equipped: "animation.player.crossbow_equipped",
+          third_person_bow_equipped: "animation.player.bow_equipped",
+          shield_block_main_hand: "animation.player.shield_block_main_hand",
+          shield_block_off_hand: "animation.player.shield_block_off_hand",
+          blink: "controller.animation.persona.blink",
+          tooting_goat_horn: "animation.humanoid.tooting_goat_horn",
+          holding_brush: "animation.humanoid.holding_brush",
+          brushing: "animation.humanoid.brushing",
+          wings_idle: "animation.wings.idle",
+          wings_fly: "animation.wings.fly",
+          ...(ownedItems.includes('trail_heart') ? { os_trail_heart: "animation.os_trail.heart" } : {}),
+          ...(ownedItems.includes('trail_flame') ? { os_trail_flame: "animation.os_trail.flame" } : {})
+        },
+        render_controllers: renderControllers,
+        enable_attachables: true
+      }
     }
+  };
+}
 
-    function selectColor(color, element) {
-      document.documentElement.style.setProperty('--primary-color', color);
-      document.querySelectorAll('.swatch, .custom-color-wrapper').forEach(el => el.classList.remove('active'));
-      element.classList.add('active');
+function buildWingsRenderController(ownedItems){
+  const nick = playerNick;
+  const wings = ownedItems.filter(i=>ITEM_DB[i].type==='wings');
+  if(wings.length === 0) return null;
+
+  // Monta expressão aninhada
+  function exprFor(id){
+    const map = {
+      wings_starcat: 'Texture.starcat_wings',
+      wings_iron: 'Texture.iron_wings',
+      wings_gold: 'Texture.gold_wings',
+      wings_diamond: 'Texture.diamond_wings',
+      wings_netherite: 'Texture.netherite_wings'
+    };
+    const setting = ITEM_DB[id].key;
+    return `query.is_pack_setting_selected('eduh:wings_select', '${setting}') ? ${map[id]} : `;
+  }
+
+  let fallback = 'Texture.wings_off';
+  let condition = wings.slice().reverse().reduce((acc, id) => exprFor(id) + acc, fallback);
+  condition = `query.is_name_any('${nick}') ? (${condition}) : Texture.wings_off`;
+
+  return {
+    format_version: "1.8.0",
+    render_controllers: {
+      "controller.render.star_cosmetic": {
+        geometry: "Geometry.wings",
+        materials: [{ "*": "Material.cape" }],
+        textures: [condition],
+        is_hurt_color: { r:0, g:0, b:0, a:0 },
+        on_fire_color: { r:0, g:0, b:0, a:0 }
+      }
     }
+  };
+}
 
-    function selectLang(lang, element) {
-      document.querySelectorAll('.chip-opt').forEach(el => el.classList.remove('active'));
-      element.classList.add('active');
+function buildShieldRenderController(ownedItems){
+  const shields = ownedItems.filter(i=>ITEM_DB[i].type==='shield');
+  if(shields.length === 0) return null;
 
-      const i18n = {
-        pt: { addon: "Crie seu Addon", header: "Configurações", theme: "Tema", color: "Cor da Paleta", lang: "Idioma" },
-        en: { addon: "Create your Addon", header: "Settings", theme: "Theme", color: "Palette Color", lang: "Language" },
-        es: { addon: "Crea tu Addon", header: "Ajustes", theme: "Tema", color: "Color de Paleta", lang: "Idioma" }
-      };
+  const hasStarcat = shields.some(i=>ITEM_DB[i].key==='shield1');
+  const hasDefault = shields.some(i=>ITEM_DB[i].key==='default');
 
-      document.getElementById('top-title').innerText = i18n[lang].addon;
-      document.getElementById('txt-header').innerText = i18n[lang].header;
-      document.getElementById('lbl-theme').innerText = i18n[lang].theme;
-      document.getElementById('lbl-color').innerText = i18n[lang].color;
-      document.getElementById('lbl-lang').innerText = i18n[lang].lang;
+  let skinExpr;
+  if(hasStarcat && hasDefault){
+    skinExpr = "query.is_pack_setting_selected('eduh:shield_skin', 'shield1') ? texture.shield1 : texture.default";
+  } else if(hasStarcat){
+    skinExpr = "texture.shield1";
+  } else {
+    skinExpr = "texture.default";
+  }
+
+  return {
+    format_version: "1.10.0",
+    render_controllers: {
+      "controller.render.shield_default": {
+        geometry: "geometry.default",
+        materials: [{ "*": "variable.is_enchanted ? material.enchanted : material.default" }],
+        textures: [
+          `query.is_local_player ? (${skinExpr}) : texture.default`,
+          "texture.enchanted"
+        ]
+      }
     }
-  </script>
+  };
+}
 
+function buildHeadRenderController(ownedItems){
+  const nick = playerNick;
+  const heads = ownedItems.filter(i=>ITEM_DB[i].type==='head');
+  if(heads.length === 0) return null;
+
+  const hasCoroa = heads.some(i=>ITEM_DB[i].key==='flower_crown');
+  let cond;
+  if(hasCoroa){
+    cond = `query.is_name_any('${nick}') ? (query.is_pack_setting_selected('eduh:head_select', 'flower_crown') ? Texture.flower_wreath : Texture.wings_off) : Texture.wings_off`;
+  } else {
+    cond = `Texture.wings_off`;
+  }
+
+  return {
+    format_version: "1.8.0",
+    render_controllers: {
+      "controller.render.head_cosmetic": {
+        geometry: "Geometry.flower_wreath",
+        materials: [{ "*": "Material.cape" }],
+        textures: [cond],
+        is_hurt_color: { r:0, g:0, b:0, a:0 },
+        on_fire_color: { r:0, g:0, b:0, a:0 }
+      }
+    }
+  };
+}
+
+// Placeholder pack_icon (1x1 vermelho) — o pack real usaria a imagem correta
+const PACK_ICON_B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+async function generatePack(ownedItems, label){
+  statusEl.className = 'status info';
+  statusEl.textContent = 'Gerando resource pack...';
+
+  try{
+    const zip = new JSZip();
+    const root = zip.folder("StarCat Client");
+
+    // manifest
+    const manifest = buildManifest(ownedItems);
+    root.file("manifest.json", JSON.stringify(manifest, null, 2));
+
+    // pack_icon
+    root.file("pack_icon.png", PACK_ICON_B64, { base64:true });
+
+    // entity
+    const entityFolder = root.folder("entity");
+    const entityJson = buildEntityJson(ownedItems);
+    entityFolder.file("player.entity.json", JSON.stringify(entityJson, null, 2));
+
+    // render controllers
+    const rcFolder = root.folder("render_controllers");
+
+    const wingsRC = buildWingsRenderController(ownedItems);
+    if(wingsRC) rcFolder.file("cosmetic.render_controllers.json", JSON.stringify(wingsRC, null, 2));
+
+    const shieldRC = buildShieldRenderController(ownedItems);
+    if(shieldRC) rcFolder.file("shield.render_controllers.json", JSON.stringify(shieldRC, null, 2));
+
+    const headRC = buildHeadRenderController(ownedItems);
+    if(headRC) rcFolder.file("head_cosmetic.render_controllers.json", JSON.stringify(headRC, null, 2));
+
+    // Gera o zip
+    const blob = await zip.generateAsync({ type: "blob" });
+
+    // Download
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const safeNick = playerNick.replace(/[^A-Za-z0-9_-]/g,'_');
+    a.download = `StarCatClient_${safeNick}_${label ? label.replace(/\s+/g,'_') : 'pack'}.mcpack`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+
+    statusEl.className = 'status success';
+    statusEl.textContent = `✅ Pack gerado com sucesso! (${ownedItems.length} item(ns))`;
+
+  }catch(err){
+    console.error(err);
+    statusEl.className = 'status error';
+    statusEl.textContent = '❌ Erro ao gerar pack: ' + err.message;
+  }
+}
+
+// ================== BOTÕES ==================
+genBtn.addEventListener('click', ()=>{
+  const owned = Object.keys(ITEM_DB).filter(isOwned);
+  if(owned.length === 0){
+    statusEl.className = 'status error';
+    statusEl.textContent = 'Você não possui nenhum cosmético.';
+    return;
+  }
+  generatePack(owned, 'todos');
+});
+
+previewBtn.addEventListener('click', ()=>{
+  const owned = Object.keys(ITEM_DB).filter(isOwned);
+  if(owned.length === 0){
+    statusEl.className = 'status error';
+    statusEl.textContent = 'Você não possui nenhum cosmético.';
+    return;
+  }
+  const manifest = buildManifest(owned);
+  manifestPreview.textContent = JSON.stringify(manifest, null, 2);
+  manifestPreview.classList.toggle('hidden');
+});
+
+reloadBtn.addEventListener('click', async ()=>{
+  if(!currentUser) return;
+  showOnly(loadingBox);
+  await loadInventory();
+  renderProfile();
+  renderItems();
+  showOnly(mainContent);
+  statusEl.className = 'status info';
+  statusEl.textContent = 'Inventário recarregado.';
+});
+
+logoutBtn.addEventListener('click', async ()=>{
+  await auth.signOut();
+});
+
+</script>
 </body>
 </html>
-
