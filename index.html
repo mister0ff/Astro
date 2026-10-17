@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menu de Cosméticos · Costas / Escudos / Cabeça</title>
 
-  <link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png">
-  <link rel="apple-touch-icon" href="https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/favicon.png">
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -407,7 +407,6 @@
       opacity: 0.85;
     }
 
-    /* ===== CONTADOR DE DONOS (agora com destaque) ===== */
     .owner-count {
       position: absolute;
       top: 0.5rem;
@@ -542,7 +541,6 @@
     .preview-info.error { color: #f87171; }
     .preview-info.success { color: #4ade80; }
 
-    /* ========== POPUP DE RECOMPENSA ========== */
     .reward-overlay {
       position: fixed;
       inset: 0;
@@ -661,7 +659,6 @@
     }
     .reward-btn:active { transform: scale(0.97); }
 
-    /* ========== MODAL (DOAÇÃO) ========== */
     .search-modal-overlay {
       position: fixed;
       inset: 0;
@@ -872,7 +869,6 @@
       text-transform: uppercase;
     }
 
-    /* ========== POPUP DE RECEBEU DOAÇÃO ========== */
     .gift-overlay {
       position: fixed;
       inset: 0;
@@ -917,7 +913,6 @@
       pointer-events: none;
     }
 
-    /* Confetes */
     .gift-confetti {
       position: absolute;
       inset: 0;
@@ -1052,9 +1047,7 @@
 <body>
   <div class="menu-container">
 
-    <img
-      src="https://cdn.discordapp.com/attachments/1462160007893356677/1560421912365236324/file_000000005188820e887fe246bf2c7701.png"
-      class="banner" alt="Banner">
+    <img src="img/banner.png" class="banner" alt="Banner">
 
     <div class="profile-corner hidden" id="profileCorner">
       <button class="search-toggle-btn" id="donateToggleBtn" title="Doar Item">
@@ -1081,7 +1074,6 @@
       Carregando...
     </div>
 
-    <!-- LOGIN / CADASTRO -->
     <div id="authScreen" class="hidden">
       <h1 id="authTitle">✦ Entrar ✦</h1>
       <div class="subtitle">acesse com e-mail e senha para gerenciar seus cosméticos</div>
@@ -1133,7 +1125,6 @@
       </div>
     </div>
 
-    <!-- DEFINIR NICK -->
     <div id="setupNickScreen" class="hidden">
       <h1>✦ Defina seu Nick ✦</h1>
       <div class="subtitle">digite o nick do seu Minecraft</div>
@@ -1149,7 +1140,6 @@
       </div>
     </div>
 
-    <!-- MENU -->
     <div id="menuScreen" class="hidden">
       <h1>✦ Cosméticos ✦</h1>
       <div class="subtitle">desbloqueie costas, escudos e cabeças · selecione um item</div>
@@ -1213,7 +1203,7 @@
       <div class="grid-3x3 hidden" id="shieldsGrid">
         <button class="shield-btn" data-item="shield_padrao" data-name="Padrão"
           data-accent="#cbd5e1" data-accent-glow="#64748b"
-          data-src="img/shield_padrao.png"
+          data-src="img/shield.png"
           data-fallback="https://cdn.discordapp.com/attachments/1462160007893356677/1560416636857622609/file_2.png">
           <span class="label">Padrão</span>
         </button>
@@ -1221,7 +1211,7 @@
         <button class="shield-btn" data-item="shield_starcat" data-name="StarCat"
           data-starcat-tag="true"
           data-accent="#ef4444" data-accent-glow="#b91c1c"
-          data-src="img/shield_starcat.png"
+          data-src="img/starcat_shield.png"
           data-fallback="https://cdn.discordapp.com/attachments/1436727187448397914/1560414696182517911/file.png">
           <span class="label">StarCat</span>
         </button>
@@ -1229,7 +1219,7 @@
         <button class="shield-btn" data-item="shield_floral" data-name="Floral"
           data-floral-tag="true"
           data-accent="#a3e635" data-accent-glow="#65a30d"
-          data-src="img/shield_floral.png"
+          data-src="img/flower_shield.png"
           data-fallback="https://cdn.discordapp.com/attachments/1436727187448397914/1560415188178698310/file_1.png">
           <span class="label">Floral</span>
         </button>
@@ -1246,7 +1236,7 @@
         <button class="head-btn" data-item="head_coroa_flores" data-name="Coroa de Flores"
           data-floral-tag="true"
           data-accent="#a3e635" data-accent-glow="#65a30d"
-          data-src="img/coroa_flores.png"
+          data-src="img/flower_wreath.png"
           data-fallback="https://cdn.discordapp.com/attachments/1462160007893356677/1560457437708947456/file_3_1.png">
           <span class="label">Coroa de Flores</span>
         </button>
@@ -1271,7 +1261,6 @@
 
   </div>
 
-  <!-- POPUP DE RECOMPENSA (resgate/código/primeiro login) -->
   <div class="reward-overlay" id="rewardOverlay">
     <div class="reward-box">
       <div class="reward-content">
@@ -1286,7 +1275,6 @@
     </div>
   </div>
 
-  <!-- ========== POPUP DE "VOCÊ RECEBEU UMA DOAÇÃO" ========== -->
   <div class="gift-overlay" id="giftOverlay">
     <div class="gift-box">
       <div class="gift-confetti" id="giftConfetti"></div>
@@ -1303,7 +1291,6 @@
     </div>
   </div>
 
-  <!-- ========== MODAL DE DOAÇÃO ========== -->
   <div class="search-modal-overlay" id="donateModalOverlay">
     <div class="search-modal" id="donateModal">
       <div class="search-modal-header">
@@ -1374,22 +1361,22 @@
     document.addEventListener('click', playClick, true);
 
     // ================== ASSETS ==================
-    const STARTCAT_TAG_ICON = 'https://cdn.discordapp.com/attachments/1462160007893356677/1550983855110881342/favicon.png';
-    const FLORAL_TAG_ICON   = 'https://cdn.discordapp.com/attachments/1462160007893356677/1560457102483398707/Luck_JE3.png';
+    const STARTCAT_TAG_ICON = 'img/starcat.png';
+    const FLORAL_TAG_ICON   = 'img/floral.png';
 
-    // Mapa: itemId -> nome do arquivo local na pasta img/
-    // Se o arquivo local não existir, usamos o fallback (CDN)
     const LOCAL_IMG = {
-      wings_diamond:   'img/diamond_wings.gif',
-      wings_netherite: 'img/netherite_wings.gif',
-      wings_gold:      'img/gold_wings.gif',
-      wings_iron:      'img/iron_wings.gif',
-      wings_starcat:   'img/starcat_wings.gif',
-      wings_floral:    'img/flower_wings.gif',
-      shield_padrao:   'img/shield_padrao.png',
-      shield_starcat:  'img/shield_starcat.png',
-      shield_floral:   'img/shield_floral.png',
-      head_coroa_flores:'img/coroa_flores.png'
+      wings_diamond:    'img/diamond_wings.gif',
+      wings_netherite:  'img/netherite_wings.gif',
+      wings_gold:       'img/gold_wings.gif',
+      wings_iron:       'img/iron_wings.gif',
+      wings_starcat:    'img/starcat_wings.gif',
+      wings_floral:     'img/flower_wings.gif',
+      shield_padrao:    'img/shield.png',
+      shield_floral:    'img/flower_shield.png',
+      shield_starcat:   'img/starcat_shield.png',
+      head_coroa_flores:'img/flower_wreath.png',
+      tag_floral:       'img/floral.png',
+      tag_starcat:      'img/starcat.png'
     };
 
     // ================== ELEMENTOS ==================
@@ -1492,24 +1479,6 @@
       return btn?.getAttribute('data-fallback') || '';
     }
 
-    // Cria <img> que tenta o arquivo local e, se falhar, usa o CDN
-    function createItemImg(btn, extraClass) {
-      const img = new Image();
-      img.className = extraClass || '';
-      img.decoding = 'async';
-      img.alt = btn?.getAttribute('data-name') || '';
-      const local = resolveSrc(btn);
-      const fallback = resolveFallback(btn);
-      img.onerror = function () {
-        if (fallback && this.src !== fallback) {
-          this.onerror = null;
-          this.src = fallback;
-        }
-      };
-      img.src = local;
-      return img;
-    }
-
     // ================== VALIDAÇÕES ==================
     function validNick(n) { n = n.trim(); return /^[A-Za-z0-9_ ]{3,20}$/.test(n); }
     function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
@@ -1560,51 +1529,67 @@
       }
     }
 
-    // ================== CONTADOR DE ITENS (PESSOAS USANDO) ==================
-    async function incrementItemCount(itemId, delta) {
-      if (!itemId || !delta) return;
+    // ================== CONTADOR DE ITENS (conta direto nos users) ==================
+    let cachedCounts = null;
+    let cachedCountsTime = 0;
+
+    async function refreshItemCountsFromUsers() {
       try {
-        const ref = db.collection('stats').doc('items');
-        await ref.set({
-          [itemId]: firebase.firestore.FieldValue.increment(delta)
-        }, { merge: true });
+        const snap = await db.collection('users').get();
+        const counts = {};
+        snap.forEach(doc => {
+          const d = doc.data();
+          const groups = [
+            Array.isArray(d.costa)  ? d.costa  : [],
+            Array.isArray(d.shield) ? d.shield : [],
+            Array.isArray(d.head)   ? d.head   : [],
+            Array.isArray(d.items)  ? d.items  : []
+          ];
+          groups.forEach(arr => {
+            arr.forEach(itemId => {
+              if (!itemId) return;
+              counts[itemId] = (counts[itemId] || 0) + 1;
+            });
+          });
+        });
+        cachedCounts = counts;
+        cachedCountsTime = Date.now();
+        return counts;
       } catch (err) {
-        console.warn('Erro ao atualizar contador:', err);
+        console.warn('Erro ao contar itens:', err);
+        return cachedCounts || {};
       }
     }
 
-    async function loadItemCounts() {
-      try {
-        const snap = await db.collection('stats').doc('items').get();
-        if (!snap.exists) return {};
-        return snap.data() || {};
-      } catch (err) {
-        return {};
-      }
-    }
-
-    // Mostra/atualiza o "N pessoas usam" em cada card
     async function updateOwnerCountsOnCards() {
-      const counts = await loadItemCounts();
+      let counts;
+      if (cachedCounts && Date.now() - cachedCountsTime < 5000) {
+        counts = cachedCounts;
+      } else {
+        counts = await refreshItemCountsFromUsers();
+      }
 
       document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(btn => {
         const itemId = btn.getAttribute('data-item');
         if (!itemId) return;
 
-        // Remove o antigo
         const old = btn.querySelector('.owner-count');
         if (old) old.remove();
 
-        // Se o item está bloqueado, não mostra contador
         if (btn.classList.contains('locked')) return;
 
         const n = counts[itemId] || 0;
         const el = document.createElement('div');
         el.className = 'owner-count';
         el.textContent = n;
-        el.title = `${n} ${n === 1 ? 'jogador usa' : 'jogadores usam'} este item`;
+        el.title = `${n} ${n === 1 ? 'jogador tem' : 'jogadores têm'} este item`;
         btn.appendChild(el);
       });
+    }
+
+    function invalidateItemCountCache() {
+      cachedCounts = null;
+      cachedCountsTime = 0;
     }
 
     // ================== CAPTCHA ==================
@@ -1791,9 +1776,7 @@
             return;
           }
 
-          // ✅ Contadores iniciais
-          await incrementItemCount('wings_gold', +1);
-          await incrementItemCount('shield_padrao', +1);
+          invalidateItemCountCache();
 
           authMsg.textContent = '✓ Conta criada! Entrando...';
           authMsg.classList.add('success');
@@ -1914,10 +1897,7 @@
         });
         playerNick = newNick;
         updateProfileUI();
-
-        await incrementItemCount('wings_gold', +1);
-        await incrementItemCount('shield_padrao', +1);
-
+        invalidateItemCountCache();
         await loadInventoryAndShow();
       } catch (err) {
         if (err.code === 'NICK_TAKEN') setupNickMsg.textContent = 'Esse nick já está em uso.';
@@ -1958,7 +1938,6 @@
             showRewardPopup('wings_gold', 'welcome');
           }
 
-          // Marca o último gift visto (se não existir, usa agora)
           if (!data.lastGiftSeen) {
             await ref.set({ lastGiftSeen: firebase.firestore.Timestamp.now() }, { merge: true });
           }
@@ -1981,22 +1960,18 @@
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
 
-          await incrementItemCount('wings_gold', +1);
-          await incrementItemCount('shield_padrao', +1);
-
           showRewardPopup('wings_gold', 'welcome');
         }
       } catch (err) {
         console.warn('Erro ao carregar inventário:', err);
       }
 
+      invalidateItemCountCache();
       showScreen('menu');
       setupCosmeticButtons();
       reorderGrids();
       preloadAllFirstFrames();
-      updateOwnerCountsOnCards();
-
-      // Escuta doações recebidas (tempo real)
+      await updateOwnerCountsOnCards();
       listenForIncomingGifts();
     }
 
@@ -2006,7 +1981,6 @@
       const rawName = btn?.getAttribute('data-name') || NAMES[itemId] || itemId;
       const isWing = itemId.startsWith('wings_');
 
-      // limpa e recria img com fallback local -> CDN
       rewardImg.src = '';
       rewardImg.className = isWing ? 'is-wing' : '';
       const local = resolveSrc(btn);
@@ -2034,7 +2008,6 @@
 
     // ================== OBSERVER ==================
     auth.onAuthStateChanged(async (user) => {
-      // limpa listener antigo
       if (unsubscribeUserListener) { unsubscribeUserListener(); unsubscribeUserListener = null; }
 
       if (!user) {
@@ -2082,6 +2055,7 @@
           items:  inventory.items,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        invalidateItemCountCache();
       } catch (err) {}
     }
 
@@ -2112,7 +2086,10 @@
         if (btn.querySelector('.floral-tag')) return;
         const tag = document.createElement('div');
         tag.className = 'floral-tag';
-        tag.innerHTML = `<img src="${FLORAL_TAG_ICON}" alt="Floral">`;
+        const tagImg = new Image();
+        tagImg.src = FLORAL_TAG_ICON;
+        tagImg.alt = 'Floral';
+        tag.appendChild(tagImg);
         tag.addEventListener('click', (e) => {
           e.stopPropagation();
           showBrandTooltip(e.currentTarget, 'Floral', 'floral');
@@ -2125,7 +2102,10 @@
         if (btn.querySelector('.starcat-tag')) return;
         const tag = document.createElement('div');
         tag.className = 'starcat-tag';
-        tag.innerHTML = `<img src="${STARTCAT_TAG_ICON}" alt="StarCat">`;
+        const tagImg = new Image();
+        tagImg.src = STARTCAT_TAG_ICON;
+        tagImg.alt = 'StarCat';
+        tag.appendChild(tagImg);
         tag.addEventListener('click', (e) => {
           e.stopPropagation();
           showBrandTooltip(e.currentTarget, 'StarCat', 'starcat');
@@ -2159,7 +2139,6 @@
 
     function isLocked(btn) { return btn.classList.contains('locked'); }
 
-    // Gera canvas com o primeiro frame do GIF (ou PNG), com fallback local->CDN
     function preloadFirstFrame(btn) {
       if (!btn || btn.dataset.loaded === 'true') return;
       const local = resolveSrc(btn);
@@ -2191,7 +2170,6 @@
           btn.insertBefore(canvas, label);
           btn.dataset.loaded = 'true';
         } catch (e) {
-          // fallback simples
           useStaticFallback(btn, local, fallback);
         }
       };
@@ -2224,7 +2202,6 @@
       document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(preloadFirstFrame);
     }
 
-    // Ativa o GIF do item selecionado (usa local com fallback para CDN)
     function activateGif(activeBtn) {
       document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(btn => {
         const existingGif = btn.querySelector('img.gif-active');
@@ -2396,8 +2373,6 @@
         inventory[category].push(matchedItem);
         await saveInventory();
 
-        await incrementItemCount(matchedItem, +1);
-
         const btn = document.querySelector(`[data-item="${matchedItem}"]`);
         if (btn) {
           btn.classList.remove('locked');
@@ -2405,7 +2380,7 @@
           preloadFirstFrame(btn);
         }
         reorderGrids();
-        updateOwnerCountsOnCards();
+        await updateOwnerCountsOnCards();
 
         previewInfo.className = 'preview-info success';
         previewInfo.innerHTML = `✅ <strong>${NAMES[matchedItem] || matchedItem}</strong> desbloqueado!`;
@@ -2485,7 +2460,6 @@
       setTimeout(() => donateTargetNick.focus(), 100);
     }
 
-    // ✅ Agora com GIF animado (local com fallback CDN)
     function renderMyItemsForDonation() {
       donateMyItems.innerHTML = '';
       const owned = getMyOwnedItems();
@@ -2504,7 +2478,6 @@
         const el = document.createElement('div');
         el.className = 'sr-item' + (kind === 'costa' ? ' wing' : '');
 
-        // <img> com fallback local -> CDN
         const img = new Image();
         img.alt = name;
         img.loading = 'lazy';
@@ -2527,8 +2500,6 @@
           el.style.outline = '3px solid #f87171';
           el.style.outlineOffset = '2px';
           el.style.boxShadow = '0 12px 24px -6px #dc2626';
-
-          // Guarda as duas URLs pro preview (que também vai ter fallback)
           donateSelectedItem = { id, name, kind, local, fallback };
           updateDonateNextState();
         });
@@ -2601,7 +2572,6 @@
         donateTargetAvatar.textContent = initialsFromNick(targetNick);
         donateTargetNickLabel.textContent = targetNick;
 
-        // Preview também com fallback local -> CDN
         donatePreviewItem.innerHTML = '';
         const previewEl = document.createElement('div');
         previewEl.className = 'sr-item' + (donateSelectedItem.kind === 'costa' ? ' wing' : '');
@@ -2681,11 +2651,9 @@
             [cat]: myArr.filter(x => x !== itemId),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
+
           tx.update(targetRef, {
             [cat]: [...targetArr, itemId],
-            lastGiftSeen: targetData.lastGiftSeen || null,
-            // Marca como "não visto" para o destinatário. Vamos usar um campo
-            // separado 'lastGift' que guarda info da última doação recebida.
             lastGift: {
               itemId: itemId,
               fromNick: playerNick,
@@ -2695,12 +2663,11 @@
           });
         });
 
-        // Atualiza inventário local
         const cat = donateSelectedItem.kind;
         const itemId = donateSelectedItem.id;
         inventory[cat] = inventory[cat].filter(x => x !== itemId);
+        invalidateItemCountCache();
 
-        // Atualiza UI
         const btn = document.querySelector(`[data-item="${itemId}"]`);
         if (btn) {
           btn.classList.remove('selected');
@@ -2711,7 +2678,7 @@
         previewInfo.className = 'preview-info';
         previewInfo.textContent = 'Nenhum item selecionado';
 
-        updateOwnerCountsOnCards();
+        await updateOwnerCountsOnCards();
 
         donateMsg2.textContent = `✅ Você doou ${donateSelectedItem.name} para ${donateTargetNickStr}!`;
         donateMsg2.className = 'search-msg info';
@@ -2720,19 +2687,19 @@
           donateModalOverlay.classList.remove('show');
         }, 1400);
       } catch (err) {
-        console.error(err);
+        console.error('Erro doação:', err);
         donateMsg2.className = 'search-msg error';
         if (err.code === 'NOT_OWNED')    donateMsg2.textContent = '❌ Você não possui mais esse item.';
         else if (err.code === 'DEFAULT') donateMsg2.textContent = '❌ Esse item padrão não pode ser doado.';
         else if (err.code === 'ALREADY_HAS') donateMsg2.textContent = '❌ O destinatário já tem esse item.';
         else if (err.code === 'NO_USER') donateMsg2.textContent = '❌ Usuário não encontrado.';
-        else                             donateMsg2.textContent = '❌ Erro ao doar.';
+        else donateMsg2.textContent = '❌ Erro ao doar: ' + (err.message || err.code || 'desconhecido');
       } finally {
         donateConfirmBtn.disabled = false;
       }
     });
 
-    // ================== ESCUTA DE DOAÇÕES RECEBIDAS (POPUP TEMPO REAL) ==================
+    // ================== ESCUTA DE DOAÇÕES RECEBIDAS ==================
     function listenForIncomingGifts() {
       if (!currentUser) return;
       if (unsubscribeUserListener) unsubscribeUserListener();
@@ -2745,17 +2712,16 @@
         if (!gift || !gift.timestamp) return;
 
         const giftTs = gift.timestamp.toMillis ? gift.timestamp.toMillis() : 0;
-        const lastSeenTs = data.lastGiftSeen && data.lastGiftSeen.toMillis
-          ? data.lastGiftSeen.toMillis()
-          : 0;
+        const lastSeenTs =
+          data.lastGiftSeen && typeof data.lastGiftSeen.toMillis === 'function'
+            ? data.lastGiftSeen.toMillis()
+            : 0;
 
-        // Se já vimos esse gift ou é mais antigo que o último visto, ignora
         if (giftTs <= lastSeenTs) return;
         if (giftTs <= lastSeenGiftTimestamp) return;
 
         lastSeenGiftTimestamp = giftTs;
 
-        // Atualiza inventário local com o item recebido
         const itemId = gift.itemId;
         if (!itemId) return;
 
@@ -2767,7 +2733,7 @@
 
         if (!inventory[cat].includes(itemId)) {
           inventory[cat].push(itemId);
-          // Libera o card no menu
+          invalidateItemCountCache();
           const btn = document.querySelector(`[data-item="${itemId}"]`);
           if (btn) {
             btn.classList.remove('locked');
@@ -2778,7 +2744,6 @@
           updateOwnerCountsOnCards();
         }
 
-        // Enfileira o popup
         giftQueue.push({
           itemId,
           fromNick: gift.fromNick || 'Alguém',
@@ -2786,9 +2751,8 @@
         });
         processGiftQueue();
 
-        // Marca como visto no servidor
         ref.set({ lastGiftSeen: firebase.firestore.Timestamp.now() }, { merge: true })
-          .catch(() => {});
+          .catch(err => console.warn('Erro ao marcar lastGiftSeen:', err));
       }, (err) => {
         console.warn('Listener de gifts:', err);
       });
@@ -2801,14 +2765,12 @@
       showGiftPopup(next);
     }
 
-    // ================== POPUP DE "VOCÊ RECEBEU UMA DOAÇÃO" ==================
     function showGiftPopup(gift) {
       const itemId = gift.itemId;
       const btn = document.querySelector(`[data-item="${itemId}"]`);
       const name = btn?.getAttribute('data-name') || NAMES[itemId] || itemId;
       const isWing = itemId.startsWith('wings_');
 
-      // Imagem local com fallback CDN
       giftImg.src = '';
       giftImg.className = isWing ? 'is-wing' : '';
       const local = resolveSrc(btn);
@@ -2822,7 +2784,6 @@
       giftFrom.innerHTML = `De <strong>${escapeHtml(gift.fromNick)}</strong>`;
       giftSub.textContent = 'você recebeu um presente! 🎁';
 
-      // Confetes aleatórios
       giftConfetti.innerHTML = '';
       const colors = ['#4ade80', '#facc15', '#f87171', '#67e8f9', '#a855f7', '#f472b6'];
       for (let i = 0; i < 28; i++) {
@@ -2838,7 +2799,6 @@
 
       giftOverlay.classList.add('show');
 
-      // Toca som de presente (reusa o click com volume maior)
       try {
         const s = clickSound.cloneNode();
         s.volume = 0.7;
@@ -2853,7 +2813,6 @@
 
     giftBtn.addEventListener('click', () => {
       hideGiftOverlay();
-      // Se tiver mais gifts na fila, mostra o próximo
       setTimeout(processGiftQueue, 400);
     });
 
@@ -2865,4 +2824,4 @@
 
   </script>
 </body>
-</html>
+        </html>
