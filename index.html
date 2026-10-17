@@ -1454,6 +1454,7 @@
     let nickCheckTimer = null;
     let activeCategory = 'wings';
     let unsubscribeUserListener = null;
+    let unsubscribeGiftsListener = null;
     let lastSeenGiftTimestamp = 0;
     let giftQueue = [];
 
@@ -1759,7 +1760,6 @@
                 head:   [],
                 items:  [],
                 firstLoginRewardSeen: false,
-                lastGiftSeen: null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
               });
@@ -1937,10 +1937,6 @@
             await ref.set({ firstLoginRewardSeen: true }, { merge: true });
             showRewardPopup('wings_gold', 'welcome');
           }
-
-          if (!data.lastGiftSeen) {
-            await ref.set({ lastGiftSeen: firebase.firestore.Timestamp.now() }, { merge: true });
-          }
         } else {
           inventory.costa = ['wings_gold'];
           inventory.shield = ['shield_padrao'];
@@ -1955,7 +1951,6 @@
             head: inventory.head,
             items: inventory.items,
             firstLoginRewardSeen: true,
-            lastGiftSeen: firebase.firestore.Timestamp.now(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -2009,12 +2004,14 @@
     // ================== OBSERVER ==================
     auth.onAuthStateChanged(async (user) => {
       if (unsubscribeUserListener) { unsubscribeUserListener(); unsubscribeUserListener = null; }
+      if (unsubscribeGiftsListener) { unsubscribeGiftsListener(); unsubscribeGiftsListener = null; }
 
       if (!user) {
         currentUser = null;
         playerNick = '';
         inventory = { costa: [], shield: ['shield_padrao'], head: [], items: [] };
         giftQueue = [];
+        lastSeenGiftTimestamp = 0;
         hideGiftOverlay();
         showScreen('auth');
         return;
@@ -2081,7 +2078,6 @@
         updateBtnLabel(btn, owned);
       });
 
-      // Selos Florais
       document.querySelectorAll('[data-floral-tag]').forEach(btn => {
         if (btn.querySelector('.floral-tag')) return;
         const tag = document.createElement('div');
@@ -2097,7 +2093,6 @@
         btn.appendChild(tag);
       });
 
-      // Selos StarCat
       document.querySelectorAll('[data-starcat-tag]').forEach(btn => {
         if (btn.querySelector('.starcat-tag')) return;
         const tag = document.createElement('div');
@@ -2611,60 +2606,48 @@
       donateStep1.style.display = 'block';
     });
 
+    // ================== CONFIRMAR DOAÇÃO (via coleção gifts) ==================
     donateConfirmBtn.addEventListener('click', async () => {
       if (!donateSelectedItem || !donateTargetUid) return;
       donateConfirmBtn.disabled = true;
-      donateMsg2.textContent = 'Doado...';
+      donateMsg2.textContent = 'Doando...';
       donateMsg2.className = 'search-msg info';
 
       try {
+        const cat = donateSelectedItem.kind;
+        const itemId = donateSelectedItem.id;
+
+        // Executa a transação apenas no documento do doador (seguro)
         await db.runTransaction(async (tx) => {
           const myRef = db.collection('users').doc(currentUser.uid);
-          const targetRef = db.collection('users').doc(donateTargetUid);
-
           const mySnap = await tx.get(myRef);
-          const targetSnap = await tx.get(targetRef);
 
-          if (!mySnap.exists || !targetSnap.exists) {
-            const e = new Error('NO_USER'); e.code = 'NO_USER'; throw e;
-          }
+          if (!mySnap.exists) { throw new Error('NO_USER'); }
 
           const myData = mySnap.data();
-          const targetData = targetSnap.data();
-          const cat = donateSelectedItem.kind;
-          const itemId = donateSelectedItem.id;
-
           const myArr = Array.isArray(myData[cat]) ? [...myData[cat]] : [];
-          const targetArr = Array.isArray(targetData[cat]) ? [...targetData[cat]] : [];
 
-          if (!myArr.includes(itemId)) {
-            const e = new Error('NOT_OWNED'); e.code = 'NOT_OWNED'; throw e;
-          }
-          if (cat === 'shield' && itemId === 'shield_padrao') {
-            const e = new Error('DEFAULT'); e.code = 'DEFAULT'; throw e;
-          }
-          if (targetArr.includes(itemId)) {
-            const e = new Error('ALREADY_HAS'); e.code = 'ALREADY_HAS'; throw e;
-          }
+          if (!myArr.includes(itemId)) { throw new Error('NOT_OWNED'); }
+          if (cat === 'shield' && itemId === 'shield_padrao') { throw new Error('DEFAULT'); }
 
+          // Remove o item do doador
           tx.update(myRef, {
             [cat]: myArr.filter(x => x !== itemId),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
-
-          tx.update(targetRef, {
-            [cat]: [...targetArr, itemId],
-            lastGift: {
-              itemId: itemId,
-              fromNick: playerNick,
-              timestamp: firebase.firestore.Timestamp.now()
-            },
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
         });
 
-        const cat = donateSelectedItem.kind;
-        const itemId = donateSelectedItem.id;
+        // Cria o registro do presente para o destinatário receber
+        await db.collection('gifts').add({
+          toUid: donateTargetUid,
+          fromUid: currentUser.uid,
+          fromNick: playerNick,
+          itemId: itemId,
+          category: cat,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Atualiza o inventário local do doador
         inventory[cat] = inventory[cat].filter(x => x !== itemId);
         invalidateItemCountCache();
 
@@ -2686,76 +2669,99 @@
         setTimeout(() => {
           donateModalOverlay.classList.remove('show');
         }, 1400);
+
       } catch (err) {
         console.error('Erro doação:', err);
         donateMsg2.className = 'search-msg error';
-        if (err.code === 'NOT_OWNED')    donateMsg2.textContent = '❌ Você não possui mais esse item.';
-        else if (err.code === 'DEFAULT') donateMsg2.textContent = '❌ Esse item padrão não pode ser doado.';
-        else if (err.code === 'ALREADY_HAS') donateMsg2.textContent = '❌ O destinatário já tem esse item.';
-        else if (err.code === 'NO_USER') donateMsg2.textContent = '❌ Usuário não encontrado.';
-        else donateMsg2.textContent = '❌ Erro ao doar: ' + (err.message || err.code || 'desconhecido');
+        if (err.message === 'NOT_OWNED')    donateMsg2.textContent = '❌ Você não possui mais esse item.';
+        else if (err.message === 'DEFAULT') donateMsg2.textContent = '❌ Esse item padrão não pode ser doado.';
+        else if (err.message === 'NO_USER') donateMsg2.textContent = '❌ Usuário não encontrado.';
+        else donateMsg2.textContent = '❌ Erro ao doar: ' + (err.message || 'desconhecido');
       } finally {
         donateConfirmBtn.disabled = false;
       }
     });
 
-    // ================== ESCUTA DE DOAÇÕES RECEBIDAS ==================
+    // ================== ESCUTA DE GIFTS (collection gifts) ==================
     function listenForIncomingGifts() {
       if (!currentUser) return;
-      if (unsubscribeUserListener) unsubscribeUserListener();
+      if (unsubscribeGiftsListener) { unsubscribeGiftsListener(); unsubscribeGiftsListener = null; }
 
-      const ref = db.collection('users').doc(currentUser.uid);
-      unsubscribeUserListener = ref.onSnapshot((snap) => {
-        if (!snap.exists) return;
-        const data = snap.data();
-        const gift = data.lastGift;
-        if (!gift || !gift.timestamp) return;
+      const myUid = currentUser.uid;
 
-        const giftTs = gift.timestamp.toMillis ? gift.timestamp.toMillis() : 0;
-        const lastSeenTs =
-          data.lastGiftSeen && typeof data.lastGiftSeen.toMillis === 'function'
-            ? data.lastGiftSeen.toMillis()
-            : 0;
+      // Marca o momento em que começamos a escutar.
+      // Só processamos gifts criados depois disso (evita reprocessar antigos).
+      const listenStart = Date.now();
 
-        if (giftTs <= lastSeenTs) return;
-        if (giftTs <= lastSeenGiftTimestamp) return;
+      unsubscribeGiftsListener = db.collection('gifts')
+        .where('toUid', '==', myUid)
+        .onSnapshot(async (snap) => {
+          const docs = [];
+          snap.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
 
-        lastSeenGiftTimestamp = giftTs;
+          // Ordena por timestamp (mais antigos primeiro)
+          docs.sort((a, b) => {
+            const ta = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+            const tb = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+            return ta - tb;
+          });
 
-        const itemId = gift.itemId;
-        if (!itemId) return;
+          for (const gift of docs) {
+            const giftTs = gift.timestamp?.toMillis ? gift.timestamp.toMillis() : listenStart;
+            if (giftTs <= lastSeenGiftTimestamp) continue;
 
-        let cat;
-        if (itemId.startsWith('wings_')) cat = 'costa';
-        else if (itemId.startsWith('shield_')) cat = 'shield';
-        else if (itemId.startsWith('head_')) cat = 'head';
-        else cat = 'items';
+            const itemId = gift.itemId;
+            if (!itemId) continue;
 
-        if (!inventory[cat].includes(itemId)) {
-          inventory[cat].push(itemId);
-          invalidateItemCountCache();
-          const btn = document.querySelector(`[data-item="${itemId}"]`);
-          if (btn) {
-            btn.classList.remove('locked');
-            updateBtnLabel(btn, true);
-            preloadFirstFrame(btn);
+            let cat;
+            if (itemId.startsWith('wings_')) cat = 'costa';
+            else if (itemId.startsWith('shield_')) cat = 'shield';
+            else if (itemId.startsWith('head_')) cat = 'head';
+            else cat = 'items';
+
+            // Adiciona o item no inventário (local + DB)
+            if (!inventory[cat].includes(itemId)) {
+              inventory[cat].push(itemId);
+              invalidateItemCountCache();
+
+              try {
+                await db.collection('users').doc(myUid).set({
+                  [cat]: inventory[cat],
+                  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+              } catch (e) {
+                console.warn('Erro ao salvar item recebido:', e);
+              }
+
+              const btn = document.querySelector(`[data-item="${itemId}"]`);
+              if (btn) {
+                btn.classList.remove('locked');
+                updateBtnLabel(btn, true);
+                preloadFirstFrame(btn);
+              }
+              reorderGrids();
+              updateOwnerCountsOnCards();
+            }
+
+            lastSeenGiftTimestamp = Math.max(lastSeenGiftTimestamp, giftTs);
+
+            giftQueue.push({
+              itemId,
+              fromNick: gift.fromNick || 'Alguém',
+              timestamp: giftTs
+            });
+            processGiftQueue();
+
+            // Deleta o gift após consumir (opcional, mantém a coleção limpa)
+            try {
+              await db.collection('gifts').doc(gift.id).delete();
+            } catch (e) {
+              console.warn('Erro ao deletar gift:', e);
+            }
           }
-          reorderGrids();
-          updateOwnerCountsOnCards();
-        }
-
-        giftQueue.push({
-          itemId,
-          fromNick: gift.fromNick || 'Alguém',
-          timestamp: giftTs
+        }, (err) => {
+          console.warn('Listener de gifts:', err);
         });
-        processGiftQueue();
-
-        ref.set({ lastGiftSeen: firebase.firestore.Timestamp.now() }, { merge: true })
-          .catch(err => console.warn('Erro ao marcar lastGiftSeen:', err));
-      }, (err) => {
-        console.warn('Listener de gifts:', err);
-      });
     }
 
     function processGiftQueue() {
@@ -2824,4 +2830,4 @@
 
   </script>
 </body>
-        </html>
+  </html>
