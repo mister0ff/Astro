@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StarCat Cosmetics · Menu</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="apple-touch-icon" href="img/favicon.png">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #450a0a 0%, #1c0a0a 45%, #0a0202 100%);
+      background-attachment: fixed;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex; justify-content: stretch; align-items: stretch;
+    }
+    .menu-container {
+      width: 100%; min-height: 100vh;
+      background: rgba(23, 8, 8, 0.65);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      position: relative; display: flex; flex-direction: column;
+    }
+
+    .banner-wrap {
+      position: relative; width: 100%;
+      height: clamp(140px, 22vh, 280px);
+      flex-shrink: 0; overflow: hidden;
+    }
+    .banner-wrap .banner {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      box-shadow: 0 8px 30px -8px rgba(220, 38, 38, 0.4);
+      pointer-events: none; user-select: none;
+    }
+
+    /* ===== HEAD 3D (lateral direita do banner) ===== */
+    #head3d-container {
+      position: absolute;
+      top: 10px;
+      right: 90px;
+      width: 90px;
+      height: 90px;
+      z-index: 6;
+      border-radius: 12px;
+      background: radial-gradient(circle at 30% 20%, rgba(42,20,20,0.9), rgba(10,2,2,0.9));
+      border: 1px solid rgba(248, 113, 113, 0.5);
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+    }
+    #head3d-container:active { cursor: grabbing; }
+    #head3d-canvas { width: 100%; height: 100%; display: block; }
+
+    .online-badge {
+      position: absolute; top: 12px; left: 12px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(10, 2, 2, 0.85);
+      border: 1px solid rgba(74, 222, 128, 0.6);
+      color: #4ade80; font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 0 14px rgba(74, 222, 128, 0.35);
+      backdrop-filter: blur(6px);
+      z-index: 5; user-select: none;
+    }
+    .online-badge svg { width: 14px; height: 14px; fill: currentColor;
+      filter: drop-shadow(0 0 3px rgba(74, 222, 128, 0.9)); }
+    .online-badge .online-num { color: #fff; }
+
+    .download-pack-btn {
+      position: absolute; top: 12px; right: 12px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 999px;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      border: 1px solid rgba(248, 113, 113, 0.75);
+      color: #fff; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 6px 18px -4px #dc2626;
+      transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+      z-index: 5; font-family: inherit;
+    }
+    .download-pack-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -6px #dc2626; filter: brightness(1.1); }
+    .download-pack-btn:active { transform: scale(0.97); }
+    .download-pack-btn:disabled { opacity: 0.7; cursor: wait; }
+    .download-pack-btn svg { width: 14px; height: 14px; fill: currentColor; }
+    .download-pack-btn.downloading svg { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .profile-corner { position: absolute; top: 1.2rem; right: 1.2rem; z-index: 50; display: flex; gap: 0.6rem; align-items: center; }
+    body:has(.banner-wrap) .profile-corner { top: calc(clamp(140px, 22vh, 280px) - 20px); }
+    .search-toggle-btn, .profile-avatar-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 2px solid rgba(248, 113, 113, 0.7);
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.6);
+    }
+    .search-toggle-btn:hover, .profile-avatar-btn:hover { transform: scale(1.08); }
+    .search-toggle-btn svg { width: 20px; height: 20px; fill: #fff; }
+    .profile-avatar-btn { font-weight: 700; font-size: 1.05rem; text-transform: uppercase; }
+
+    .profile-dropdown {
+      position: absolute; top: 60px; right: 0;
+      min-width: 260px;
+      background: rgba(23, 8, 8, 0.98);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      border-radius: 16px; padding: 1rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+      backdrop-filter: blur(14px);
+      animation: fadeDown 0.18s ease; z-index: 60;
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .profile-head {
+      display: flex; align-items: center; gap: 0.8rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid rgba(148,163,184,0.15);
+      margin-bottom: 0.8rem;
+    }
+    .profile-head-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 1rem;
+      flex-shrink: 0; text-transform: uppercase;
+    }
+    .profile-head-info { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+    .profile-head-info .nick { color: #fee2e2; font-weight: 700; font-size: 0.9rem; letter-spacing: 1px; }
+    .profile-head-info .email { color: #71717a; font-size: 0.7rem; }
+    .profile-logout {
+      width: 100%; margin-top: 0.5rem; padding: 0.6rem;
+      border-radius: 10px;
+      border: 1px solid rgba(248,113,113,0.5);
+      background: rgba(248,113,113,0.1);
+      color: #fca5a5;
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer;
+      transition: 0.18s; text-transform: uppercase;
+    }
+    .profile-logout:hover { background: rgba(248,113,113,0.25); color: #fecaca; }
+
+    #authScreen, #setupNickScreen, #menuScreen {
+      width: 100%; padding: 1.8rem 1.8rem 2.4rem;
+      flex: 1; display: flex; flex-direction: column;
+    }
+    #authScreen, #setupNickScreen { justify-content: center; }
+    h1 {
+      text-align: center;
+      font-size: clamp(1.5rem, 2.2vw, 2.2rem);
+      font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      background: linear-gradient(135deg, #fecaca, #ef4444);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent; margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      text-align: center; color: #a1a1aa;
+      margin-bottom: 1.8rem; font-size: 0.85rem;
+      letter-spacing: 1.5px; font-weight: 300;
+    }
+    .hidden { display: none !important; }
+
+    .auth-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .auth-tab {
+      padding: 0.6rem 1.6rem; border-radius: 50px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(23, 8, 8, 0.4);
+      color: #a1a1aa; font-size: 0.85rem; font-weight: 700;
+      letter-spacing: 1.2px; cursor: pointer;
+      transition: 0.2s; text-transform: uppercase;
+    }
+    .auth-tab:hover { color: #fee2e2; border-color: rgba(248,113,113,0.5); }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 6px 18px -4px #dc2626;
+    }
+    .auth-box { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 0.5rem 0; }
+    .field { display: flex; flex-direction: column; width: 100%; max-width: 420px; gap: 0.4rem; }
+    .field label { color: #e4e4e7; font-size: 0.78rem; letter-spacing: 1.2px; font-weight: 600; text-transform: uppercase; }
+    .field input {
+      background: rgba(10, 2, 2, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #f1f5f9;
+      padding: 0.8rem 1rem; border-radius: 12px;
+      font-size: 0.95rem; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .field input:focus { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.25); }
+    .field input::placeholder { color: #52525b; }
+    .field input.invalid { border-color: #f87171; }
+    .field input.valid { border-color: #4ade80; }
+    .field .hint { font-size: 0.7rem; color: #71717a; min-height: 0.9rem; }
+    .field .hint.error { color: #f87171; }
+    .field .hint.ok { color: #4ade80; }
+    .field .hint.checking { color: #facc15; }
+
+    /* ===== SKIN UPLOAD AREA ===== */
+    .skin-upload-wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 0.4rem; }
+    .skin-upload-wrap label {
+      color: #e4e4e7; font-size: 0.78rem; letter-spacing: 1.2px;
+      font-weight: 600; text-transform: uppercase;
+    }
+    .skin-upload-box {
+      display: flex; align-items: center; gap: 0.9rem;
+      background: rgba(10, 2, 2, 0.7);
+      border: 1px dashed rgba(248, 113, 113, 0.5);
+      border-radius: 14px; padding: 0.7rem;
+      transition: border-color 0.2s;
+    }
+    .skin-upload-box:hover { border-color: #f87171; }
+    .skin-upload-preview {
+      width: 64px; height: 64px; flex-shrink: 0;
+      background: radial-gradient(circle at 30% 20%, #2a1414, #170808);
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      position: relative;
+    }
+    .skin-upload-preview canvas { width: 100%; height: 100%; display: block; }
+    .skin-upload-info { flex: 1; display: flex; flex-direction: column; gap: 0.35rem; }
+    .skin-upload-info span { color: #a1a1aa; font-size: 0.72rem; }
+    .skin-upload-btn {
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      color: #fff; border: none;
+      padding: 0.55rem 1rem; border-radius: 8px;
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer;
+      font-family: inherit; text-transform: uppercase;
+      transition: filter 0.2s;
+    }
+    .skin-upload-btn:hover { filter: brightness(1.1); }
+    .skin-upload-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .skin-upload-hint { font-size: 0.7rem; color: #71717a; min-height: 0.9rem; }
+    .skin-upload-hint.error { color: #f87171; }
+    .skin-upload-hint.ok { color: #4ade80; }
+    .skin-upload-hint.warn { color: #facc15; }
+
+    .captcha-wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 0.5rem; }
+    .captcha-box {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: linear-gradient(135deg, rgba(220,38,38,0.15), rgba(23,8,8,0.6));
+      border: 1px solid rgba(248,113,113,0.35);
+      border-radius: 12px; padding: 0.7rem 0.9rem;
+      user-select: none;
+    }
+    .captcha-check {
+      width: 26px; height: 26px;
+      border: 2px solid #f87171; border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.2s; flex-shrink: 0;
+      background: rgba(10,2,2,0.5);
+    }
+    .captcha-check.checked { background: #dc2626; }
+    .captcha-check.checked::after { content: '✓'; color: #fff; font-weight: 900; font-size: 15px; }
+    .captcha-check.shake { animation: shake 0.4s; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .captcha-label { flex: 1; font-size: 0.82rem; color: #e4e4e7; }
+    .captcha-math { font-family: monospace; font-size: 0.95rem; color: #f87171; font-weight: 700; white-space: nowrap; }
+    .captcha-math .num { color: #facc15; padding: 0 3px; }
+    .captcha-answer {
+      width: 70px;
+      background: rgba(10, 2, 2, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #f1f5f9;
+      padding: 0.5rem; border-radius: 8px;
+      font-size: 0.9rem; text-align: center;
+      font-family: monospace; outline: none;
+    }
+    .captcha-answer:focus { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.25); }
+    .captcha-answer.invalid { border-color: #f87171; }
+
+    .auth-btn {
+      color: #fff; border: none;
+      padding: 0.85rem 2.4rem; border-radius: 50px;
+      font-size: 0.95rem; font-weight: 700;
+      letter-spacing: 1.5px; cursor: pointer;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      box-shadow: 0 6px 18px -4px #dc2626;
+      transition: transform 0.18s, box-shadow 0.18s;
+      font-family: inherit;
+      width: 100%; max-width: 420px;
+      margin-top: 0.3rem;
+    }
+    .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -6px #dc2626; }
+    .auth-btn:active { transform: scale(0.97); }
+    .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .auth-msg { text-align: center; font-size: 0.82rem; min-height: 1.2rem; max-width: 420px; }
+    .auth-msg.error { color: #f87171; }
+    .auth-msg.success { color: #4ade80; }
+    .setup-nick-box { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem 0; }
+    .loading-box { text-align: center; padding: 2rem 0; color: #f87171; font-size: 0.9rem; letter-spacing: 1.5px; }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid rgba(248, 113, 113, 0.25);
+      border-top-color: #f87171;
+      border-radius: 50%;
+      margin: 0 auto 1rem;
+      animation: spin 0.9s linear infinite;
+    }
+
+    .category-tabs { display: flex; justify-content: center; gap: 0.6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+    .category-tab {
+      padding: 0.55rem 1.8rem; border-radius: 50px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(23, 8, 8, 0.4);
+      color: #a1a1aa; font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 1.2px; cursor: pointer;
+      transition: 0.2s; text-transform: uppercase;
+    }
+    .category-tab:hover { color: #fee2e2; border-color: rgba(248,113,113,0.5); }
+    .category-tab.active {
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 6px 18px -4px #dc2626;
+    }
+
+    .grid-3x3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: clamp(0.6rem, 1.2vh, 1.1rem);
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      max-width: min(1100px, 56vh);
+      margin: 0 auto;
+    }
+
+    .wing-btn, .shield-btn, .head-btn {
+      position: relative;
+      width: 100%; height: 100%;
+      border: none; padding: 0;
+      border-radius: 1.2rem;
+      cursor: pointer; overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #2a1414, #170808);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(248, 113, 113, 0.18);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, outline-color 0.22s ease;
+      display: flex; align-items: center; justify-content: center;
+      outline: 0 solid transparent; outline-offset: 2px;
+    }
+
+    .wing-btn canvas, .wing-btn img.static-frame, .wing-btn img.gif-active {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.35s ease, filter 0.35s ease;
+      filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.35));
+    }
+    .shield-btn canvas, .shield-btn img.static-frame, .shield-btn img.gif-active,
+    .head-btn canvas, .head-btn img.static-frame, .head-btn img.gif-active {
+      width: 82%; height: 82%; object-fit: contain; display: block; margin: auto;
+      transition: transform 0.35s ease, filter 0.35s ease;
+      filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.35));
+    }
+    .wing-btn img.gif-active, .shield-btn img.gif-active, .head-btn img.gif-active {
+      filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.6));
+    }
+
+    .wing-btn .label, .shield-btn .label, .head-btn .label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.5rem 0.4rem;
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.6px; text-transform: uppercase;
+      color: #f8fafc; text-align: center;
+      background: linear-gradient(to top, rgba(10, 2, 2, 0.95), rgba(10, 2, 2, 0.55) 65%, transparent);
+      text-shadow: 0 1px 3px black;
+      pointer-events: none; z-index: 3;
+    }
+    .wing-btn:not(.locked):hover, .shield-btn:not(.locked):hover, .head-btn:not(.locked):hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 18px 30px -8px #dc2626, 0 0 0 2px rgba(248, 113, 113, 0.55);
+      z-index: 2;
+    }
+    .wing-btn:not(.locked):hover canvas, .wing-btn:not(.locked):hover img,
+    .shield-btn:not(.locked):hover canvas, .shield-btn:not(.locked):hover img,
+    .head-btn:not(.locked):hover canvas, .head-btn:not(.locked):hover img {
+      transform: scale(1.08); filter: brightness(1.15);
+    }
+    .wing-btn:not(.locked):active, .shield-btn:not(.locked):active, .head-btn:not(.locked):active {
+      transform: scale(0.97);
+    }
+    .wing-btn.selected, .shield-btn.selected, .head-btn.selected {
+      outline: 3px solid var(--accent, #f87171);
+      outline-offset: 2px;
+      box-shadow: 0 18px 30px -8px var(--accent-glow, #dc2626);
+      transform: translateY(-2px) scale(1.02); z-index: 2;
+    }
+    .wing-btn.locked, .shield-btn.locked, .head-btn.locked {
+      cursor: not-allowed; pointer-events: none;
+    }
+    .wing-btn.locked canvas, .wing-btn.locked img,
+    .shield-btn.locked canvas, .shield-btn.locked img,
+    .head-btn.locked canvas, .head-btn.locked img {
+      filter: brightness(0.15) contrast(1.1) drop-shadow(0 0 1px #a1a1aa);
+      opacity: 0.75;
+    }
+    .wing-btn.locked::after, .shield-btn.locked::after, .head-btn.locked::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 50%,
+        rgba(69, 10, 10, 0.35) 0%, rgba(23, 8, 8, 0.55) 55%, rgba(10, 2, 2, 0.75) 100%);
+      z-index: 2; border-radius: inherit; pointer-events: none;
+    }
+    .wing-btn.locked .label, .shield-btn.locked .label, .head-btn.locked .label {
+      z-index: 6;
+      background: linear-gradient(to top, rgba(23, 8, 8, 0.95), rgba(23, 8, 8, 0.55) 65%, transparent);
+      color: #a1a1aa;
+    }
+    .wing-btn.locked::before, .shield-btn.locked::before, .head-btn.locked::before {
+      content: '🔒';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -60%);
+      font-size: 2rem; z-index: 5;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9));
+      opacity: 0.85;
+    }
+
+    .owner-count {
+      position: absolute; top: 0.5rem; left: 0.5rem;
+      min-width: 30px; height: 26px; padding: 0 0.5rem;
+      border-radius: 13px;
+      background: linear-gradient(135deg, rgba(220,38,38,0.95), rgba(127,29,29,0.95));
+      border: 1px solid rgba(250,204,21,0.7);
+      color: #fff; font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.4px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.25rem;
+      z-index: 9; pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.8), 0 0 12px rgba(250,204,21,0.25);
+      text-shadow: 0 1px 2px black;
+    }
+    .owner-count::before { content: '👤'; font-size: 0.7rem; }
+    .wing-btn.locked .owner-count,
+    .shield-btn.locked .owner-count,
+    .head-btn.locked .owner-count { display: none !important; }
+
+    .floral-tag, .starcat-tag {
+      position: absolute; top: 0.5rem; right: 0.5rem;
+      width: 26px; height: 26px; z-index: 10;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    }
+    .floral-tag:hover, .starcat-tag:hover { transform: scale(1.18); }
+    .floral-tag img, .starcat-tag img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .wing-btn.locked .floral-tag, .shield-btn.locked .floral-tag, .head-btn.locked .floral-tag,
+    .wing-btn.locked .starcat-tag, .shield-btn.locked .starcat-tag, .head-btn.locked .starcat-tag {
+      display: none !important;
+    }
+
+    .brand-tooltip {
+      position: fixed; z-index: 9999;
+      padding: 0.55rem 1rem; color: #fff;
+      font-size: 0.82rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      border-radius: 8px;
+      pointer-events: none;
+      opacity: 0; transform: translateY(4px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      white-space: nowrap;
+    }
+    .brand-tooltip.show { opacity: 1; transform: translateY(0); }
+    .brand-tooltip::after {
+      content: ''; position: absolute;
+      top: 100%; left: 50%; transform: translateX(-50%);
+      border: 5px solid transparent;
+    }
+    .brand-tooltip.floral {
+      background: rgba(15, 30, 10, 0.96); color: #a3e635;
+      border: 2px solid #65a30d;
+      box-shadow: 0 0 14px rgba(101, 163, 13, 0.6), 0 6px 20px rgba(0,0,0,0.7);
+    }
+    .brand-tooltip.floral::after { border-top-color: #65a30d; }
+    .brand-tooltip.starcat {
+      background: rgba(30, 8, 8, 0.96); color: #fca5a5;
+      border: 2px solid #dc2626;
+      box-shadow: 0 0 14px rgba(220, 38, 38, 0.6), 0 6px 20px rgba(0,0,0,0.7);
+    }
+    .brand-tooltip.starcat::after { border-top-color: #dc2626; }
+
+    .empty-cell {
+      width: 100%; height: 100%; border-radius: 1.2rem;
+      background: rgba(23, 8, 8, 0.35);
+      border: 1px dashed rgba(248, 113, 113, 0.2);
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .redeem-area { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1.6rem; flex-wrap: wrap; }
+    .redeem-input {
+      background: rgba(10, 2, 2, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #f1f5f9;
+      padding: 0.7rem 1rem; border-radius: 50px;
+      font-size: 0.9rem; letter-spacing: 1px;
+      outline: none; min-width: 220px;
+      font-family: monospace; text-transform: uppercase;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .redeem-input:focus { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.25); }
+    .redeem-input::placeholder { color: #52525b; }
+    .redeem-btn {
+      color: #fff; border: none;
+      padding: 0.7rem 1.6rem; border-radius: 50px;
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      box-shadow: 0 6px 18px -4px #dc2626;
+    }
+    .redeem-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -6px #dc2626; }
+    .redeem-btn:active { transform: scale(0.97); }
+    .redeem-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .preview-info {
+      text-align: center; margin-top: 1.2rem;
+      font-size: 0.9rem; color: #a1a1aa;
+      letter-spacing: 1px; min-height: 1.4rem;
+    }
+    .preview-info strong { color: #fca5a5; }
+    .preview-info.error { color: #f87171; }
+    .preview-info.success { color: #4ade80; }
+
+    .reward-overlay, .search-modal-overlay, .gift-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+      padding: 1rem;
+    }
+    .reward-overlay { z-index: 10000; }
+    .search-modal-overlay { z-index: 10001; background: rgba(0,0,0,0.85); }
+    .gift-overlay { z-index: 10002; background: rgba(0,0,0,0.88); backdrop-filter: blur(10px); }
+    .reward-overlay.show, .search-modal-overlay.show, .gift-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .reward-box {
+      background: linear-gradient(135deg, rgba(69,10,10,0.95), rgba(23,8,8,0.98));
+      border: 2px solid #facc15;
+      border-radius: 24px; padding: 2rem 2.5rem;
+      max-width: 460px; width: 100%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(250, 204, 21, 0.5), 0 20px 60px rgba(0,0,0,0.9);
+      animation: rewardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative; overflow: hidden;
+    }
+    @keyframes rewardPop {
+      0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .reward-box::before {
+      content: ''; position: absolute; inset: -50%;
+      background: conic-gradient(from 0deg, transparent 0deg, rgba(250, 204, 21, 0.15) 90deg, transparent 180deg, rgba(250, 204, 21, 0.15) 270deg, transparent 360deg);
+      animation: spin 8s linear infinite; pointer-events: none;
+    }
+    .reward-content { position: relative; z-index: 2; }
+    .reward-title {
+      font-size: 1.1rem; letter-spacing: 3px; color: #facc15;
+      font-weight: 800; text-transform: uppercase; margin-bottom: 0.6rem;
+      text-shadow: 0 0 20px rgba(250, 204, 21, 0.8);
+    }
+    .reward-sub { color: #a1a1aa; font-size: 0.78rem; letter-spacing: 2px; margin-bottom: 1.4rem; text-transform: uppercase; }
+    .reward-img-wrap {
+      width: 240px; height: 240px; margin: 0 auto 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      filter: drop-shadow(0 0 30px rgba(250, 204, 21, 0.9));
+      animation: rewardFloat 2.2s ease-in-out infinite;
+    }
+    @keyframes rewardFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .reward-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .reward-img-wrap img.is-wing { object-fit: cover; }
+    .reward-name {
+      font-size: 1.6rem; font-weight: 900; letter-spacing: 2px;
+      background: linear-gradient(135deg, #fef3c7, #facc15, #eab308);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent; text-transform: uppercase;
+      margin-bottom: 1.4rem;
+      text-shadow: 0 0 30px rgba(250, 204, 21, 0.5);
+    }
+    .reward-btn {
+      color: #000; border: none;
+      padding: 0.9rem 2.4rem; border-radius: 50px;
+      font-size: 0.9rem; font-weight: 800;
+      letter-spacing: 2px; cursor: pointer;
+      background: linear-gradient(135deg, #facc15, #eab308);
+      box-shadow: 0 8px 24px -4px rgba(250, 204, 21, 0.7);
+      transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+      text-transform: uppercase; font-family: inherit;
+    }
+    .reward-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px -6px rgba(250, 204, 21, 0.9); filter: brightness(1.1); }
+    .reward-btn:active { transform: scale(0.97); }
+
+    .search-modal {
+      background: linear-gradient(135deg, rgba(23,8,8,0.98), rgba(10,2,2,0.99));
+      border: 2px solid rgba(248, 113, 113, 0.55);
+      border-radius: 24px;
+      max-width: 720px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 0 60px rgba(220, 38, 38, 0.4), 0 20px 60px rgba(0,0,0,0.9);
+      animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    @keyframes modalPop {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .search-modal-header {
+      padding: 1.4rem 1.6rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      position: sticky; top: 0;
+      background: rgba(23, 8, 8, 0.98);
+      z-index: 2; backdrop-filter: blur(8px);
+    }
+    .search-modal-title {
+      font-size: 1rem; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: #fca5a5;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .search-modal-title::before {
+      content: ''; width: 4px; height: 16px;
+      background: linear-gradient(180deg, #ef4444, #b91c1c);
+      border-radius: 2px;
+    }
+    .search-modal-close {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid rgba(248, 113, 113, 0.5);
+      background: rgba(248, 113, 113, 0.1);
+      color: #fca5a5; font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.18s;
+    }
+    .search-modal-close:hover { background: rgba(248, 113, 113, 0.3); color: #fecaca; transform: rotate(90deg); }
+    .search-modal-body { padding: 1.4rem 1.6rem 1.8rem; }
+
+    .search-msg { text-align: center; font-size: 0.85rem; letter-spacing: 0.8px; min-height: 1.3rem; margin-bottom: 0.4rem; }
+    .search-msg.error { color: #f87171; }
+    .search-msg.info { color: #a1a1aa; }
+    .search-msg.success { color: #4ade80; }
+
+    .sr-profile {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem;
+      background: rgba(10, 2, 2, 0.7);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+      border-radius: 16px; margin-bottom: 1.2rem;
+    }
+    .sr-avatar {
+      width: 62px; height: 62px; border-radius: 50%;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 1.4rem;
+      text-transform: uppercase; flex-shrink: 0;
+      box-shadow: 0 6px 18px -4px #dc2626;
+      overflow: hidden; position: relative;
+    }
+    .sr-avatar canvas { width: 100%; height: 100%; display: block; }
+    .sr-avatar.has-skin { background: radial-gradient(circle at 30% 20%, #2a1414, #170808); }
+    .sr-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .sr-info .nick { color: #fee2e2; font-weight: 800; font-size: 1.15rem; letter-spacing: 1.2px; }
+    .sr-info .stats { color: #71717a; font-size: 0.75rem; letter-spacing: 0.8px; }
+
+    .sr-section-title {
+      font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 1.8px; text-transform: uppercase;
+      color: #fca5a5; margin: 1.2rem 0 0.7rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .sr-section-title::before {
+      content: ''; width: 4px; height: 14px;
+      background: linear-gradient(180deg, #ef4444, #b91c1c);
+      border-radius: 2px;
+    }
+    .sr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.7rem;
+    }
+    .sr-item {
+      position: relative; aspect-ratio: 1 / 1;
+      border-radius: 1rem; overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #2a1414, #170808);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(248, 113, 113, 0.18);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .sr-item:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 24px -6px #dc2626, 0 0 0 2px rgba(248, 113, 113, 0.5); }
+    .sr-item img { width: 82%; height: 82%; object-fit: contain; display: block; filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.35)); }
+    .sr-item.wing img { width: 100%; height: 100%; object-fit: cover; }
+    .sr-item canvas {
+      width: 82%; height: 82%; object-fit: contain;
+      display: block; pointer-events: none;
+      filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.35));
+    }
+    .sr-item.wing canvas {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .sr-item img.gif-active { pointer-events: none; }
+    .sr-item .sr-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.35rem 0.3rem;
+      font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      color: #f8fafc; text-align: center;
+      background: linear-gradient(to top, rgba(10, 2, 2, 0.95), rgba(10, 2, 2, 0.55) 65%, transparent);
+      text-shadow: 0 1px 3px black;
+      pointer-events: none;
+    }
+    .sr-empty {
+      text-align: center; color: #52525b;
+      font-size: 0.75rem; letter-spacing: 1px;
+      padding: 0.6rem 0; text-transform: uppercase;
+    }
+    .search-input-row { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+    .search-input-row input {
+      flex: 1; background: rgba(10, 2, 2, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #f1f5f9;
+      padding: 0.8rem 1rem; border-radius: 50px;
+      font-size: 0.95rem; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit; letter-spacing: 0.5px;
+    }
+    .search-input-row input:focus { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.25); }
+    .search-input-row input::placeholder { color: #52525b; }
+    .search-input-row button {
+      color: #fff; border: none;
+      padding: 0.8rem 1.6rem; border-radius: 50px;
+      font-size: 0.85rem; font-weight: 700;
+      letter-spacing: 1.2px; cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      box-shadow: 0 6px 18px -4px #dc2626;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .search-input-row button:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -6px #dc2626; }
+    .search-input-row button:active { transform: scale(0.97); }
+    .search-input-row button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .gift-box {
+      background: linear-gradient(135deg, rgba(15,60,20,0.95), rgba(8,23,10,0.98));
+      border: 3px solid #4ade80; border-radius: 28px;
+      padding: 2.2rem 2.5rem; max-width: 480px; width: 100%;
+      text-align: center;
+      box-shadow: 0 0 80px rgba(74, 222, 128, 0.6), 0 20px 60px rgba(0,0,0,0.95);
+      animation: rewardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative; overflow: hidden;
+    }
+    .gift-box::before {
+      content: ''; position: absolute; inset: -50%;
+      background: conic-gradient(from 0deg, transparent 0deg, rgba(74, 222, 128, 0.18) 90deg, transparent 180deg, rgba(74, 222, 128, 0.18) 270deg, transparent 360deg);
+      animation: spin 6s linear infinite; pointer-events: none;
+    }
+    .gift-content { position: relative; z-index: 2; }
+    .gift-title {
+      font-size: 1.25rem; letter-spacing: 3px;
+      color: #4ade80; font-weight: 900;
+      text-transform: uppercase; margin-bottom: 0.4rem;
+      text-shadow: 0 0 20px rgba(74, 222, 128, 0.9);
+    }
+    .gift-sub { color: #86efac; font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 1rem; text-transform: uppercase; font-weight: 600; }
+    .gift-from { color: #a1a1aa; font-size: 0.82rem; letter-spacing: 1.2px; margin-bottom: 0.6rem; text-transform: uppercase; }
+    .gift-from strong { color: #fef08a; font-size: 1.05rem; letter-spacing: 1.5px; }
+
+    .gift-recipient {
+      display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+      margin: 0.8rem 0 1rem;
+      padding: 0.7rem;
+      background: rgba(8, 23, 10, 0.6);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      border-radius: 14px;
+    }
+    .gift-recipient-avatar {
+      width: 54px; height: 54px; border-radius: 10px;
+      background: radial-gradient(circle at 30% 20%, #1a2a1a, #0a150a);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .gift-recipient-avatar canvas { width: 100%; height: 100%; display: block; }
+    .gift-recipient-info {
+      display: flex; flex-direction: column; gap: 0.15rem;
+      text-align: left; min-width: 0;
+    }
+    .gift-recipient-info .label {
+      color: #86efac; font-size: 0.65rem; letter-spacing: 1.4px;
+      text-transform: uppercase; font-weight: 700;
+    }
+    .gift-recipient-info .name {
+      color: #f0fdf4; font-size: 1.05rem; font-weight: 800;
+      letter-spacing: 1.2px;
+    }
+
+    .gift-img-wrap {
+      width: 200px; height: 200px; margin: 0.8rem auto 1rem;
+      display: flex; align-items: center; justify-content: center;
+      filter: drop-shadow(0 0 30px rgba(74, 222, 128, 0.9));
+      animation: rewardFloat 2.2s ease-in-out infinite;
+    }
+    .gift-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .gift-img-wrap img.is-wing { object-fit: cover; }
+    .gift-item-name {
+      font-size: 1.4rem; font-weight: 900; letter-spacing: 2px;
+      background: linear-gradient(135deg, #d9f99d, #4ade80, #22c55e);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent; text-transform: uppercase;
+      margin-bottom: 1.4rem;
+      text-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
+    }
+    .gift-btn {
+      color: #052e16; border: none;
+      padding: 0.9rem 2.4rem; border-radius: 50px;
+      font-size: 0.9rem; font-weight: 800;
+      letter-spacing: 2px; cursor: pointer;
+      background: linear-gradient(135deg, #86efac, #22c55e);
+      box-shadow: 0 8px 24px -4px rgba(34, 197, 94, 0.7);
+      transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+      text-transform: uppercase; font-family: inherit;
+    }
+    .gift-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px -6px rgba(34, 197, 94, 0.9); filter: brightness(1.1); }
+    .gift-btn:active { transform: scale(0.97); }
+
+    @media (max-width: 560px) {
+      #authScreen, #setupNickScreen, #menuScreen { padding: 1.2rem 1rem 1.6rem; }
+      .banner-wrap { height: 120px; }
+      .online-badge, .download-pack-btn { font-size: 0.65rem; padding: 5px 9px; top: 8px; }
+      .online-badge { left: 8px; }
+      .download-pack-btn { right: 8px; }
+      #head3d-container { width: 70px; height: 70px; right: 78px; top: 6px; }
+      body:has(.banner-wrap) .profile-corner { top: 100px; }
+      h1 { font-size: 1.4rem; }
+      .grid-3x3 { gap: 0.6rem; max-width: min(100%, 74vh); }
+      .wing-btn .label, .shield-btn .label, .head-btn .label { font-size: 0.62rem; padding: 0.35rem 0.2rem; }
+      .wing-btn, .shield-btn, .head-btn { border-radius: 0.9rem; }
+      .empty-cell { border-radius: 0.9rem; }
+      .redeem-input { min-width: 160px; font-size: 0.8rem; }
+      .redeem-btn { padding: 0.65rem 1.1rem; font-size: 0.8rem; }
+      .profile-corner { top: 0.9rem; right: 0.9rem; gap: 0.4rem; }
+      .profile-avatar-btn, .search-toggle-btn { width: 42px; height: 42px; font-size: 0.95rem; }
+      .profile-dropdown { min-width: 230px; right: -0.5rem; }
+      .category-tab { padding: 0.45rem 1.2rem; font-size: 0.7rem; }
+      .floral-tag, .starcat-tag { width: 22px; height: 22px; top: 0.4rem; right: 0.4rem; }
+      .owner-count { font-size: 0.62rem; height: 22px; min-width: 24px; top: 0.4rem; left: 0.4rem; }
+      .reward-box, .gift-box { padding: 1.5rem 1.4rem; max-width: 340px; }
+      .reward-img-wrap, .gift-img-wrap { width: 180px; height: 180px; }
+      .reward-name, .gift-item-name { font-size: 1.3rem; }
+      .search-modal-header { padding: 1rem 1.1rem 0.8rem; }
+      .search-modal-body { padding: 1rem 1.1rem 1.4rem; }
+      .sr-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+      .sr-avatar { width: 52px; height: 52px; font-size: 1.15rem; }
+      .sr-info .nick { font-size: 1rem; }
+      .skin-upload-box { padding: 0.55rem; }
+      .skin-upload-preview { width: 54px; height: 54px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="menu-container">
+
+    <div class="banner-wrap">
+      <img src="img/banner.png" class="banner" alt="Banner StarCat">
+
+      <div id="head3d-container" title="Sua cabeça 3D">
+        <canvas id="head3d-canvas"></canvas>
+      </div>
+
+      <div class="online-badge" id="onlineBadge" title="Jogadores online">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+        <span>ONLINE <span class="online-num" id="onlineNum">--</span></span>
+      </div>
+
+      <button class="download-pack-btn" id="downloadPackBtn" title="Baixar StarCat Cosmetics.mcpack">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/>
+        </svg>
+        <span>Baixar Pack</span>
+      </button>
+    </div>
+
+    <div class="profile-corner hidden" id="profileCorner">
+      <button class="search-toggle-btn" id="donateToggleBtn" title="Doar Item">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+        </svg>
+      </button>
+      <button class="profile-avatar-btn" id="profileAvatarBtn" title="Perfil">?</button>
+      <div class="profile-dropdown hidden" id="profileDropdown">
+        <div class="profile-head">
+          <div class="profile-head-avatar" id="profileHeadAvatar">?</div>
+          <div class="profile-head-info">
+            <div class="nick" id="profileHeadNick">—</div>
+            <div class="email" id="profileHeadEmail">—</div>
+          </div>
+        </div>
+        <button class="profile-logout" id="profileLogoutBtn">Sair da Conta</button>
+      </div>
+    </div>
+
+    <div id="loadingScreen" class="loading-box">
+      <div class="spinner"></div>
+      Carregando...
+    </div>
+
+    <div id="authScreen" class="hidden">
+      <h1 id="authTitle">✦ Entrar ✦</h1>
+      <div class="subtitle">acesse com e-mail e senha para gerenciar seus cosméticos</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Entrar</button>
+        <button class="auth-tab" data-tab="signup">Criar Conta</button>
+      </div>
+      <div class="auth-box">
+        <div class="field" id="nickField" style="display:none;">
+          <label for="signupNick">Nick do Minecraft</label>
+          <input type="text" id="signupNick" placeholder="Seu nick" maxlength="20" autocomplete="off" spellcheck="false">
+          <div class="hint" id="nickHint">3 a 20 caracteres. Letras, números, _ e espaços</div>
+        </div>
+        <div class="field">
+          <label for="emailInput">E-mail</label>
+          <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email" spellcheck="false">
+          <div class="hint" id="emailHint"></div>
+        </div>
+        <div class="field">
+          <label for="passInput">Senha</label>
+          <input type="password" id="passInput" placeholder="••••••••" autocomplete="off">
+          <div class="hint" id="passHint"></div>
+        </div>
+        <div class="field" id="pass2Field" style="display:none;">
+          <label for="pass2Input">Repetir Senha</label>
+          <input type="password" id="pass2Input" placeholder="••••••••" autocomplete="off">
+          <div class="hint" id="pass2Hint"></div>
+        </div>
+
+        <div class="skin-upload-wrap" id="signupSkinWrap" style="display:none;">
+          <label>Skin (.png 64x64 ou 64x32)</label>
+          <div class="skin-upload-box">
+            <div class="skin-upload-preview" id="signupSkinPreview">
+              <canvas id="signupSkinCanvas" width="64" height="64"></canvas>
+            </div>
+            <div class="skin-upload-info">
+              <span>Opcional — você pode enviar depois</span>
+              <button type="button" class="skin-upload-btn" id="signupSkinBtn">Escolher arquivo</button>
+            </div>
+          </div>
+          <input type="file" id="signupSkinInput" accept="image/png" style="display:none;">
+          <div class="skin-upload-hint" id="signupSkinHint"></div>
+        </div>
+
+        <div class="captcha-wrap" id="captchaWrap" style="display:none;">
+          <label style="color:#e4e4e7;font-size:0.78rem;letter-spacing:1.2px;font-weight:600;text-transform:uppercase;">Verificação de Segurança</label>
+          <div class="captcha-box">
+            <div class="captcha-check" id="captchaCheck" title="Marque para verificar"></div>
+            <div class="captcha-label">Não sou um robô</div>
+            <div class="captcha-math" id="captchaMath">—</div>
+            <input type="text" class="captcha-answer" id="captchaAnswer" placeholder="?" maxlength="3" inputmode="numeric" autocomplete="off">
+            <button id="captchaRefresh" title="Nova conta" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:16px;padding:0 4px;">↻</button>
+          </div>
+          <div class="hint" id="captchaHint">Resolva a conta matemática</div>
+        </div>
+        <button class="auth-btn" id="authSubmit">Entrar</button>
+        <div class="auth-msg" id="authMsg"></div>
+      </div>
+    </div>
+
+    <div id="setupNickScreen" class="hidden">
+      <h1>✦ Defina seu Nick ✦</h1>
+      <div class="subtitle">digite o nick do seu Minecraft</div>
+      <div class="setup-nick-box">
+        <div class="field">
+          <label for="setupNickInput">Nick do Minecraft</label>
+          <input type="text" id="setupNickInput" placeholder="Seu nick" maxlength="20" autocomplete="off" spellcheck="false">
+          <div class="hint" id="setupNickHint">3 a 20 caracteres. Letras, números, _ e espaços</div>
+        </div>
+
+        <div class="skin-upload-wrap">
+          <label>Sua Skin (.png 64x64 ou 64x32)</label>
+          <div class="skin-upload-box">
+            <div class="skin-upload-preview">
+              <canvas id="setupSkinCanvas" width="64" height="64"></canvas>
+            </div>
+            <div class="skin-upload-info">
+              <span>Usada no avatar e no head 3D</span>
+              <button type="button" class="skin-upload-btn" id="setupSkinBtn">Escolher arquivo</button>
+            </div>
+          </div>
+          <input type="file" id="setupSkinInput" accept="image/png" style="display:none;">
+          <div class="skin-upload-hint" id="setupSkinHint"></div>
+        </div>
+
+        <button class="auth-btn" id="setupNickSave">Salvar Nick</button>
+        <div class="auth-msg" id="setupNickMsg"></div>
+        <button class="profile-logout" id="setupNickLogout" style="max-width:420px;">Sair da Conta</button>
+      </div>
+    </div>
+
+    <div id="menuScreen" class="hidden">
+      <h1>✦ Cosméticos ✦</h1>
+      <div class="subtitle">desbloqueie costas, escudos e cabeças · selecione um item</div>
+      <div class="category-tabs">
+        <button class="category-tab active" data-category="wings">Costas</button>
+        <button class="category-tab" data-category="shields">Escudos</button>
+        <button class="category-tab" data-category="heads">Cabeça</button>
+      </div>
+
+      <div class="grid-3x3" id="wingsGrid">
+        <button class="wing-btn" data-item="wings_diamond" data-name="Diamond" data-accent="#67e8f9" data-accent-glow="#0891b2" data-src="img/diamond_wings.gif" data-fallback=""><span class="label">Diamond</span></button>
+        <button class="wing-btn" data-item="wings_netherite" data-name="Netherite" data-accent="#a855f7" data-accent-glow="#7c3aed" data-src="img/netherite_wings.gif" data-fallback=""><span class="label">Netherite</span></button>
+        <button class="wing-btn" data-item="wings_gold" data-name="Gold" data-accent="#facc15" data-accent-glow="#ca8a04" data-src="img/gold_wings.gif" data-fallback=""><span class="label">Gold</span></button>
+        <button class="wing-btn" data-item="wings_iron" data-name="Iron" data-accent="#94a3b8" data-accent-glow="#475569" data-src="img/iron_wings.gif" data-fallback=""><span class="label">Iron</span></button>
+        <button class="wing-btn" data-item="wings_starcat" data-name="Starcat" data-starcat-tag="true" data-accent="#ef4444" data-accent-glow="#b91c1c" data-src="img/starcat_wings.gif" data-fallback=""><span class="label">Starcat</span></button>
+        <button class="wing-btn" data-item="wings_floral" data-name="Floral" data-floral-tag="true" data-accent="#a3e635" data-accent-glow="#65a30d" data-src="img/flower_wings.gif" data-fallback=""><span class="label">Floral</span></button>
+        <div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div>
+      </div>
+
+      <div class="grid-3x3 hidden" id="shieldsGrid">
+        <button class="shield-btn" data-item="shield_padrao" data-name="Padrão" data-accent="#cbd5e1" data-accent-glow="#64748b" data-src="img/shield.png" data-fallback=""><span class="label">Padrão</span></button>
+        <button class="shield-btn" data-item="shield_starcat" data-name="StarCat" data-starcat-tag="true" data-accent="#ef4444" data-accent-glow="#b91c1c" data-src="img/starcat_shield.png" data-fallback=""><span class="label">StarCat</span></button>
+        <button class="shield-btn" data-item="shield_floral" data-name="Floral" data-floral-tag="true" data-accent="#a3e635" data-accent-glow="#65a30d" data-src="img/flower_shield.png" data-fallback=""><span class="label">Floral</span></button>
+        <div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div>
+        <div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div>
+      </div>
+
+      <div class="grid-3x3 hidden" id="headsGrid">
+        <button class="head-btn" data-item="head_coroa_flores" data-name="Coroa de Flores" data-floral-tag="true" data-accent="#a3e635" data-accent-glow="#65a30d" data-src="img/flower_wreath.png" data-fallback=""><span class="label">Coroa de Flores</span></button>
+        <div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div><div class="empty-cell"></div>
+      </div>
+
+      <div class="redeem-area" id="redeemArea">
+        <input type="text" class="redeem-input" id="redeemInput" placeholder="STAR-___-___-___" maxlength="19" autocomplete="off" spellcheck="false" autocapitalize="characters">
+        <button class="redeem-btn" id="redeemBtn">Resgatar</button>
+      </div>
+      <div class="preview-info" id="previewInfo">Nenhum item selecionado</div>
+    </div>
+  </div>
+
+  <div class="reward-overlay" id="rewardOverlay">
+    <div class="reward-box">
+      <div class="reward-content">
+        <div class="reward-title" id="rewardTitle">✦ Recompensa ✦</div>
+        <div class="reward-sub" id="rewardSub">primeiro login · boas-vindas</div>
+        <div class="reward-img-wrap"><img id="rewardImg" src="" alt=""></div>
+        <div class="reward-name" id="rewardName">Gold Wings</div>
+        <button class="reward-btn" id="rewardBtn">Coletar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-modal-overlay" id="donateModalOverlay">
+    <div class="search-modal">
+      <div class="search-modal-header">
+        <div class="search-modal-title">Doar Item</div>
+        <button class="search-modal-close" id="donateModalClose" title="Fechar">✕</button>
+      </div>
+      <div class="search-modal-body">
+        <div id="donateStep1">
+          <div class="sr-section-title" style="margin-top:0;">Escolha um item seu para doar</div>
+          <div class="sr-grid" id="donateMyItems"></div>
+          <div class="search-msg" id="donateMsg1" style="margin-top:0.8rem;"></div>
+          <div id="donatePreviewBox" style="display:none;margin-top:1rem;padding:0.9rem;background:rgba(10,2,2,0.6);border:1px solid rgba(248,113,113,0.25);border-radius:14px;">
+            <div style="font-size:0.72rem;letter-spacing:1.4px;text-transform:uppercase;color:#fca5a5;font-weight:800;margin-bottom:0.6rem;">Item que você vai doar</div>
+            <div style="display:flex;align-items:center;gap:0.9rem;">
+              <div id="donatePreviewThumb" style="width:72px;height:72px;border-radius:12px;background:radial-gradient(circle at 30% 20%, #2a1414, #170808);box-shadow:inset 0 0 0 1px rgba(248,113,113,0.25);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;"></div>
+              <div style="display:flex;flex-direction:column;gap:0.15rem;min-width:0;">
+                <div id="donatePreviewName" style="color:#fee2e2;font-weight:800;font-size:1rem;letter-spacing:1px;text-transform:uppercase;">—</div>
+                <div id="donatePreviewKind" style="color:#71717a;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="search-input-row" style="margin-top:1rem;">
+            <input type="text" id="donateTargetNick" placeholder="Nick de quem vai receber..." maxlength="20" autocomplete="off" spellcheck="false">
+            <button id="donateNextBtn" disabled>Continuar</button>
+          </div>
+        </div>
+        <div id="donateStep2" style="display:none;">
+          <div class="sr-profile" style="margin-bottom:1rem;">
+            <div class="sr-avatar" id="donateTargetAvatar">?</div>
+            <div class="sr-info">
+              <div class="nick" id="donateTargetNickLabel">—</div>
+              <div class="stats">vai receber o item abaixo</div>
+            </div>
+          </div>
+          <div class="sr-section-title" style="margin-top:0;">Item que será doado</div>
+          <div class="sr-grid" id="donatePreviewItem" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr));max-width:140px;"></div>
+          <div class="search-msg" id="donateMsg2" style="margin-top:1rem;"></div>
+          <div style="display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap;">
+            <button id="donateBackBtn" style="flex:1;color:#fca5a5;border:1px solid rgba(248,113,113,0.5);background:rgba(248,113,113,0.1);padding:0.8rem;border-radius:50px;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;font-size:0.8rem;">Voltar</button>
+            <button id="donateConfirmBtn" style="flex:2;color:#fff;border:none;padding:0.8rem;border-radius:50px;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;font-size:0.8rem;background:linear-gradient(135deg,#b91c1c,#dc2626);box-shadow:0 6px 18px -4px #dc2626;">Confirmar Doação</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gift-overlay" id="giftOverlay">
+    <div class="gift-box">
+      <div class="gift-content">
+        <div class="gift-title">Doação Recebida!</div>
+        <div class="gift-sub" id="giftSub">alguém te enviou um presente</div>
+        <div class="gift-from" id="giftFrom">De <strong>—</strong></div>
+
+        <div class="gift-recipient">
+          <div class="gift-recipient-avatar" id="giftRecipientAvatar">
+            <canvas id="giftRecipientCanvas" width="64" height="64"></canvas>
+          </div>
+          <div class="gift-recipient-info">
+            <div class="label">Para você</div>
+            <div class="name" id="giftRecipientName">—</div>
+          </div>
+        </div>
+
+        <div class="gift-img-wrap"><img id="giftImg" src="" alt=""></div>
+        <div class="gift-item-name" id="giftItemName">Item</div>
+        <button class="gift-btn" id="giftBtn">Obrigado!</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    /* ================== FIREBASE ================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyCtXluQl2mtkehl9FICeJBPbP-_A3YRhzk",
+      authDomain: "testgyyyy.firebaseapp.com",
+      projectId: "testgyyyy",
+      storageBucket: "testgyyyy.firebasestorage.app",
+      messagingSenderId: "393006784345",
+      appId: "1:393006784345:web:df958ca70ac79ccc603648",
+      measurementId: "G-5RY35J0MQ6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    /* ================== CONFIG DO WEBHOOK ================== */
+    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1561405440225583186/9lk61ezzFyZse8DSa0QvMAjZMD2DPvQ8nMw9HHfiPAD6XH9W2F0yLf9jr8QmjcMKdhvc';
+
+    /* ================== SOM ================== */
+    const clickSound = new Audio('https://cdn.discordapp.com/attachments/1462160007893356677/1560425835603689492/os_click.ogg');
+    clickSound.preload = 'auto';
+    clickSound.volume = 0.5;
+    function playClick() {
+      try { const s = clickSound.cloneNode(); s.volume = 0.5; s.play().catch(() => {}); } catch (e) {}
+    }
+    document.addEventListener('click', playClick, true);
+
+    /* ================== CONTAGEM ONLINE ================== */
+    async function fetchOnlineCount() {
+      try {
+        const snap = await db.collection('status').doc('online').get();
+        if (snap.exists && typeof snap.data().count === 'number') return snap.data().count;
+        const usersSnap = await db.collection('users').get();
+        return usersSnap.size;
+      } catch (e) { return null; }
+    }
+    async function updateOnlineBadge() {
+      const el = document.getElementById('onlineNum');
+      if (!el) return;
+      const n = await fetchOnlineCount();
+      el.textContent = (n === null || n === undefined) ? '0' : String(n);
+    }
+    updateOnlineBadge();
+    setInterval(updateOnlineBadge, 30000);
+
+    /* =========================================================
+       GERADOR DO .MCPACK — usa o nick do usuário logado
+    ========================================================= */
+    const NICK_PLACEHOLDER = '__NICK_PLACEHOLDER__';
+
+    const MCPACK_FILES = {
+      'manifest.json': `{
+  "format_version": 3,
+  "metadata": {
+    "url": "https://www.curseforge.com/minecraft-bedrock/texture-packs/adaptive_cape",
+    "authors": ["EduhFzz"]
+  },
+  "header": {
+    "description": "§o§7Resource pack developed by §cEduhFzz",
+    "name": "§cStarCat Client §7${NICK_PLACEHOLDER}",
+    "uuid": "7f3b81d2-9a4c-4e81-b30f-21d459038e12",
+    "min_engine_version": "1.21.120",
+    "version": "1.5.0"
+  },
+  "modules": [
+    { "type": "resources", "uuid": "a5c924e1-8073-4f92-96cb-8d1e349208fa", "version": "1.5.0" }
+  ],
+  "settings": [
+    { "type": "label", "text": "§l§c --- [ §rpor : Eduh§c ] ---" },
+    { "type": "label", "text": " Versão: 1.0" },
+    { "type": "toggle", "text": "§l§c Mod Escudo:§r§o§7 Ativa ou desliga as variações dinâmicas do escudo.", "name": "athan213:adaptive_cape.shield", "default": false },
+    { "type": "dropdown", "text": "§l§c Skin do Escudo:§r§o§7 Escolha a textura base do escudo.", "name": "eduh:shield_skin", "default": "default",
+      "options": [
+        { "name": "default", "text": "§lPadrão" },
+        { "name": "shield1", "text": "§c§lStarCat" },
+        { "name": "floral_shield", "text": "§a§lEscudo Floral" }
+      ]},
+    { "type": "dropdown", "text": "§c§l ▬▬▬▬▬▬▬ Wings  ▬▬▬▬▬▬▬\\n\\n\\n", "name": "eduh:wings_select", "default": "off",
+      "options": [
+        { "name": "off", "text": "§lOff" },
+        { "name": "starcat", "text": "§lStarcat" },
+        { "name": "iron", "text": "§lIron" },
+        { "name": "gold", "text": "§lGold" },
+        { "name": "diamond", "text": "§lDiamond" },
+        { "name": "netherite", "text": "§lNetherite" },
+        { "name": "flower_wings", "text": "§a§lAsa Floral" }
+      ]},
+    { "type": "dropdown", "text": "§c§l ▬▬▬▬▬▬▬ Trials  ▬▬▬▬▬▬▬\\n\\n\\n", "name": "eduh:trails_select", "default": "off",
+      "options": [
+        { "name": "off", "text": "§lOff" },
+        { "name": "heart", "text": "§lHeart" },
+        { "name": "flame", "text": "§lFlame" }
+      ]},
+    { "type": "dropdown", "text": "§c§l ▬▬▬▬▬▬▬ Head  ▬▬▬▬▬▬▬\\n\\n\\n", "name": "eduh:head_select", "default": "default",
+      "options": [
+        { "name": "default", "text": "§lDefault" },
+        { "name": "flower_crown", "text": "§a§lCoroa de Flores" }
+      ]},
+    { "type": "dropdown", "text": "§c§l ▬▬▬▬▬▬▬ Capes  ▬▬▬▬▬▬▬\\n\\n\\n", "name": "eduh:cape_select", "default": "default",
+      "options": [
+        { "name": "default", "text": "§lDefault" },
+        { "name": "flower_cape", "text": "§a§lCapa de Flores" },
+        { "name": "creeper_cape", "text": "§cCapa de creeper" }
+      ]},
+    { "type": "toggle", "text": "§l§cHitboxes", "name": "chb:hitbox", "default": true },
+    { "type": "toggle", "text": "§l§cHITBOX ESP (See Through)", "name": "chb:esp", "default": false },
+    { "type": "label", "text": "§l§c --- [ §rCosméticos§c ] ---" },
+    { "type": "toggle", "text": "§l§cBotas:§r§o§7 Ativa ou desativa as botas cosméticas.", "name": "eduh:cosmetic.boots", "default": false }
+  ]
+}`,
+
+      'render_controllers/shield_default.json': `{
+  "format_version": "1.10.0",
+  "render_controllers": {
+    "controller.render.shield_default": {
+      "geometry": "geometry.default",
+      "materials": [ { "*": "variable.is_enchanted ? material.enchanted : material.default" } ],
+      "textures": [
+        "query.is_name_any('${NICK_PLACEHOLDER}') ? (query.is_pack_setting_enabled('athan213:adaptive_cape.shield') ? (variable.shield_state == 1 ? texture.green : (variable.shield_state == 2 ? texture.red : (query.is_pack_setting_selected('eduh:shield_skin', 'shield1') ? texture.shield1 : (query.is_pack_setting_selected('eduh:shield_skin', 'floral_shield') ? texture.floral_shield : texture.default)))) : (query.is_pack_setting_selected('eduh:shield_skin', 'shield1') ? texture.shield1 : (query.is_pack_setting_selected('eduh:shield_skin', 'floral_shield') ? texture.floral_shield : texture.default))) : texture.default",
+        "texture.enchanted"
+      ]
+    }
+  }
+}`,
+
+      'render_controllers/star_cosmetic.json': `{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.star_cosmetic": {
+      "geometry": "Geometry.wings",
+      "materials": [ { "*": "Material.cape" } ],
+      "textures": [
+        "query.is_name_any('${NICK_PLACEHOLDER}') ? (query.is_pack_setting_selected('eduh:wings_select', 'starcat') ? Texture.starcat_wings : (query.is_pack_setting_selected('eduh:wings_select', 'iron') ? Texture.iron_wings : (query.is_pack_setting_selected('eduh:wings_select', 'gold') ? Texture.gold_wings : (query.is_pack_setting_selected('eduh:wings_select', 'diamond') ? Texture.diamond_wings : (query.is_pack_setting_selected('eduh:wings_select', 'netherite') ? Texture.netherite_wings : (query.is_pack_setting_selected('eduh:wings_select', 'flower_wings') ? Texture.flower_wings : Texture.wings_off)))))) : Texture.wings_off"
+      ],
+      "is_hurt_color": { "r": 0, "g": 0, "b": 0, "a": 0 },
+      "on_fire_color": { "r": 0, "g": 0, "b": 0, "a": 0 }
+    }
+  }
+}`,
+
+      'render_controllers/head_cosmetic.json': `{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.head_cosmetic": {
+      "geometry": "Geometry.flower_wreath",
+      "materials": [ { "*": "Material.cape" } ],
+      "textures": [
+        "query.is_name_any('${NICK_PLACEHOLDER}') ? (query.is_pack_setting_selected('eduh:head_select', 'flower_crown') ? Texture.flower_wreath : Texture.wings_off) : Texture.wings_off"
+      ],
+      "is_hurt_color": { "r": 0, "g": 0, "b": 0, "a": 0 },
+      "on_fire_color": { "r": 0, "g": 0, "b": 0, "a": 0 }
+    }
+  }
+}`,
+
+      'entity/player.json': `{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "minecraft:player",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_alphatest",
+        "cape": "entity_alphatest",
+        "animated": "player_animated",
+        "spectator": "player_spectator"
+      },
+      "textures": {
+        "default": "textures/entity/steve",
+        "cape": "textures/entity/cape_invisible",
+        "flower_cape": "textures/capes/flower_cape",
+        "creeper_cape": "textures/capes/creeper_cape",
+        "flower_wreath": "textures/head/flower_wreath",
+        "wings_off": "textures/cosmetics/off",
+        "starcat_wings": "textures/cosmetics/starcat_wings",
+        "iron_wings": "textures/cosmetics/iron_wings",
+        "gold_wings": "textures/cosmetics/gold_wings",
+        "diamond_wings": "textures/cosmetics/diamond_wings",
+        "flower_wings": "textures/cosmetics/flower_wings",
+        "netherite_wings": "textures/cosmetics/netherite_wings"
+      },
+      "geometry": {
+        "default": "geometry.humanoid.custom",
+        "cape": "geometry.cape",
+        "wings": "geometry.wings",
+        "flower_wreath": "geometry.flower_wreath"
+      },
+      "particle_effects": {
+        "os_trail_heart": "os:trail_heart",
+        "os_trail_flame": "os:trail_flame"
+      },
+      "scripts": {
+        "scale": "0.9375",
+        "variables": {
+          "variable.fp_melee_spear_use_attachable_rotation_z": "public",
+          "variable.tp_melee_spear_use_attachable_rotation_z": "public",
+          "variable.fp_melee_spear_attack_attachable_rotation_z": "public",
+          "variable.tp_melee_spear_attack_attachable_position_z": "public",
+          "variable.attack_time": "public",
+          "variable.item_use_normalized": "public"
+        },
+        "initialize": [
+          "v.is_holding_right = 0.0;",
+          "v.is_blinking = 0.0;",
+          "v.last_blink_time = 0.0;",
+          "v.hand_bob = 0.0;",
+          "v.melee_spear_java_to_bedrock_scale = 40.0;"
+        ],
+        "pre_animation": [
+          "v.helmet_layer_visible = !query.has_head_gear;",
+          "v.leg_layer_visible = 1.0;",
+          "v.boot_layer_visible = 1.0;",
+          "v.chest_layer_visible = 1.0;",
+          "v.attack_body_rot_y = Math.sin(360 * Math.sqrt(v.attack_time)) * 10.0;",
+          "v.tcos0 = math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed / v.gliding_speed_value * 57.3;",
+          "v.first_person_item_rotation_factor = math.sin((1 - v.attack_time) * 180.0);",
+          "v.hand_bob = query.life_time < 0.01 ? 0.0 : v.hand_bob + ((query.is_on_ground && query.is_alive ? math.clamp(math.sqrt(math.pow(query.position_delta(0), 2.0) + math.pow(query.position_delta(2), 2.0)), 0.0, 0.1) : 0.0) - v.hand_bob) * 0.02;",
+          "v.map_angle = math.clamp(1 - v.player_x_rotation / 45.1, 0.0, 1.0);",
+          "v.item_use_duration = query.main_hand_item_use_duration > 0.0 ? (query.main_hand_item_max_duration - (query.main_hand_item_use_duration - query.frame_alpha + 1.0)) : 0.0;",
+          "v.item_use_normalized = query.main_hand_item_use_duration / query.main_hand_item_max_duration;",
+          "v.riding_y_offset = query.is_riding_any_entity_of_type('minecraft:minecart', 'minecraft:boat', 'minecraft:chest_boat', 'minecraft:strider') ? -3.0 : 0.0;",
+          "v.melee_spear_equipped = query.equipped_item_any_tag('slot.weapon.mainhand', 'minecraft:is_spear');",
+          "v.tp_melee_spear_base_arm_rotation_x = (query.is_swimming || query.is_gliding) ? (-115.0 - query.target_x_rotation) : (query.is_crawling ? -115.0 : -30.0);"
+        ],
+        "animate": [
+          "root",
+          { "wings_fly": "query.is_name_any('${NICK_PLACEHOLDER}') && !query.is_sneaking && !query.is_pack_setting_selected('eduh:wings_select', 'off')" },
+          { "wings_idle": "query.is_name_any('${NICK_PLACEHOLDER}') && query.is_sneaking && !query.is_pack_setting_selected('eduh:wings_select', 'off')" },
+          { "os_trail_heart": "query.is_pack_setting_selected('eduh:trails_select', 'heart') && (math.abs(query.position_delta(0)) > 0.01 || math.abs(query.position_delta(2)) > 0.01) && query.is_alive && !variable.map_face_icon" },
+          { "os_trail_flame": "query.is_pack_setting_selected('eduh:trails_select', 'flame') && (math.abs(query.position_delta(0)) > 0.01 || math.abs(query.position_delta(2)) > 0.01) && query.is_alive && !variable.map_face_icon" }
+        ],
+        "should_update_effects_offscreen": "1.0"
+      },
+      "animations": {
+        "root": "controller.animation.player.root",
+        "base_controller": "controller.animation.player.base",
+        "hudplayer": "controller.animation.player.hudplayer",
+        "humanoid_base_pose": "animation.humanoid.base_pose",
+        "look_at_target": "controller.animation.humanoid.look_at_target",
+        "look_at_target_ui": "animation.player.look_at_target.ui",
+        "look_at_target_default": "animation.humanoid.look_at_target.default",
+        "look_at_target_gliding": "animation.humanoid.look_at_target.gliding",
+        "look_at_target_swimming": "animation.humanoid.look_at_target.swimming",
+        "look_at_target_inverted": "animation.player.look_at_target.inverted",
+        "cape": "animation.player.cape",
+        "move.arms": "animation.player.move.arms",
+        "move.legs": "animation.player.move.legs",
+        "swimming": "animation.player.swim",
+        "swimming.no_right_arm": "animation.player.swim.no_right_arm",
+        "swimming.legs": "animation.player.swim.legs",
+        "crawling": "animation.player.crawl",
+        "crawling.no_right_arm": "animation.player.crawl.no_right_arm",
+        "crawling.legs": "animation.player.crawl.legs",
+        "riding.root": "animation.player.riding.root",
+        "riding.arms": "animation.player.riding.arms",
+        "riding.legs": "animation.player.riding.legs",
+        "holding": "animation.player.holding",
+        "holding_heavy_core": "animation.player.holding_heavy_core",
+        "brandish_spear": "animation.humanoid.brandish_spear",
+        "holding_spyglass": "animation.humanoid.holding_spyglass",
+        "charging": "animation.humanoid.charging",
+        "attack.positions": "animation.player.attack.positions",
+        "attack.rotations": "animation.player.attack.rotations",
+        "sneaking": "animation.player.sneaking",
+        "bob": "animation.player.bob",
+        "damage_nearby_mobs": "animation.humanoid.damage_nearby_mobs",
+        "bow_and_arrow": "animation.humanoid.bow_and_arrow",
+        "use_item_progress": "animation.humanoid.use_item_progress",
+        "skeleton_attack": "animation.skeleton.attack",
+        "sleeping": "animation.player.sleeping",
+        "first_person_base_pose": "animation.player.first_person.base_pose",
+        "first_person_empty_hand": "animation.player.first_person.empty_hand",
+        "first_person_swap_item": "animation.player.first_person.swap_item",
+        "first_person_shield_block": "animation.player.first_person.shield_block",
+        "first_person_attack_controller": "controller.animation.player.first_person_attack",
+        "first_person_attack_rotation": "animation.player.first_person.attack_rotation",
+        "first_person_vr_attack_rotation": "animation.player.first_person.vr_attack_rotation",
+        "first_person_walk": "animation.player.first_person.walk",
+        "first_person_map_controller": "controller.animation.player.first_person_map",
+        "first_person_map_hold": "animation.player.first_person.map_hold",
+        "first_person_map_hold_attack": "animation.player.first_person.map_hold_attack",
+        "first_person_map_hold_off_hand": "animation.player.first_person.map_hold_off_hand",
+        "first_person_map_hold_main_hand": "animation.player.first_person.map_hold_main_hand",
+        "first_person_crossbow_equipped": "animation.player.first_person.crossbow_equipped",
+        "first_person_breathing_bob": "animation.player.first_person.breathing_bob",
+        "third_person_crossbow_equipped": "animation.player.crossbow_equipped",
+        "third_person_bow_equipped": "animation.player.bow_equipped",
+        "first_person_melee_spear_use": "animation.player.first_person.melee_spear_use",
+        "first_person_melee_spear_hold": "animation.player.first_person.melee_spear_hold",
+        "first_person_melee_spear_attack": "animation.player.first_person.melee_spear_attack",
+        "first_person_melee_spear_controller": "controller.animation.player.first_person_melee_spear",
+        "third_person_melee_spear_use": "animation.humanoid.melee_spear_use",
+        "third_person_melee_spear_hold": "animation.humanoid.melee_spear_hold",
+        "third_person_melee_spear_attack": "animation.player.melee_spear_attack",
+        "third_person_melee_spear_controller": "controller.animation.player.melee_spear",
+        "crossbow_hold": "animation.player.crossbow_hold",
+        "crossbow_controller": "controller.animation.player.crossbow",
+        "shield_block_main_hand": "animation.player.shield_block_main_hand",
+        "shield_block_off_hand": "animation.player.shield_block_off_hand",
+        "blink": "controller.animation.persona.blink",
+        "tooting_goat_horn": "animation.humanoid.tooting_goat_horn",
+        "holding_brush": "animation.humanoid.holding_brush",
+        "brushing": "animation.humanoid.brushing",
+        "os_trail_heart": "animation.os_trail.heart",
+        "os_trail_flame": "animation.os_trail.flame",
+        "wings_idle": "animation.wings.idle",
+        "wings_fly": "animation.wings.fly"
+      },
+      "render_controllers": [
+        { "controller.render.player.first_person_spectator": "variable.is_first_person && query.is_spectator" },
+        { "controller.render.player.third_person_spectator": "!variable.is_first_person && !variable.map_face_icon && query.is_spectator" },
+        { "controller.render.player.first_person": "variable.is_first_person && !query.is_spectator" },
+        { "controller.render.player.third_person": "!variable.is_first_person && !variable.map_face_icon && !query.is_spectator" },
+        { "controller.render.player.map": "variable.map_face_icon" },
+        { "controller.render.cape": "query.armor_texture_slot(1) != 5 && !variable.is_first_person && !query.is_local_player && !query.is_spectator" },
+        { "controller.render.player.cape": "variable.is_paperdoll || (!variable.is_first_person && query.is_local_player && !query.is_spectator)" },
+        { "controller.render.head_cosmetic": "query.is_name_any('${NICK_PLACEHOLDER}') && !variable.is_first_person && !query.is_spectator" },
+        { "controller.render.star_cosmetic": "query.is_name_any('${NICK_PLACEHOLDER}') && !variable.is_first_person && !query.is_spectator" }
+      ],
+      "enable_attachables": true
+    }
+  }
+}`
+    };
+
+    function replaceNickInString(str, nick) {
+      return str.split(NICK_PLACEHOLDER).join(nick);
+    }
+
+    async function gerarMcpack() {
+      const btn = document.getElementById('downloadPackBtn');
+      if (!currentUser || !playerNick) { alert('Faça login antes de baixar o pack.'); return; }
+      if (btn) { btn.disabled = true; btn.classList.add('downloading'); }
+      try {
+        const nickRaw = playerNick.trim();
+        const nickFinal = nickRaw.replace(/[^A-Za-z0-9_ ]/g, '').slice(0, 20) || 'Player';
+        const zip = new JSZip();
+        for (const [path, content] of Object.entries(MCPACK_FILES)) {
+          zip.file(path, replaceNickInString(content, nickFinal));
+        }
+        let iconBlob = null;
+        try {
+          const r = await fetch('img/banner.png', { cache: 'no-store' });
+          if (r.ok) {
+            const b = await r.blob();
+            if (b && b.size > 0 && b.type.startsWith('image/')) iconBlob = b;
+          }
+        } catch (e) {}
+        if (!iconBlob) {
+          const c = document.createElement('canvas');
+          c.width = 128; c.height = 128;
+          const ctx = c.getContext('2d');
+          const g = ctx.createLinearGradient(0, 0, 128, 128);
+          g.addColorStop(0, '#b91c1c'); g.addColorStop(1, '#dc2626');
+          ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 20px sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('StarCat', 64, 64);
+          iconBlob = await new Promise(res => c.toBlob(res, 'image/png'));
+        }
+        zip.file('pack_icon.png', iconBlob);
+        const blob = await zip.generateAsync({
+          type: 'blob', compression: 'DEFLATE',
+          compressionOptions: { level: 6 },
+          mimeType: 'application/octet-stream'
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `StarCat Cosmetics - ${nickFinal}.mcpack`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      } catch (err) {
+        console.error(err);
+        alert('Falha ao gerar o .mcpack: ' + (err.message || err));
+      } finally {
+        if (btn) { btn.disabled = false; btn.classList.remove('downloading'); }
+      }
+    }
+
+    (function setupDownloadButton() {
+      const btn = document.getElementById('downloadPackBtn');
+      if (!btn) return;
+      btn.addEventListener('click', gerarMcpack);
+    })();
+
+    /* ================== ELEMENTOS ================== */
+    const loadingScreen = document.getElementById('loadingScreen');
+    const authScreen    = document.getElementById('authScreen');
+    const setupNickScreen = document.getElementById('setupNickScreen');
+    const menuScreen    = document.getElementById('menuScreen');
+    const authTitle     = document.getElementById('authTitle');
+    const authTabs      = document.querySelectorAll('.auth-tab');
+    const authSubmit    = document.getElementById('authSubmit');
+    const authMsg       = document.getElementById('authMsg');
+    const emailInput    = document.getElementById('emailInput');
+    const emailHint     = document.getElementById('emailHint');
+    const passInput     = document.getElementById('passInput');
+    const passHint      = document.getElementById('passHint');
+    const pass2Field    = document.getElementById('pass2Field');
+    const pass2Input    = document.getElementById('pass2Input');
+    const pass2Hint     = document.getElementById('pass2Hint');
+    const nickField     = document.getElementById('nickField');
+    const signupNick    = document.getElementById('signupNick');
+    const nickHint      = document.getElementById('nickHint');
+    const captchaWrap   = document.getElementById('captchaWrap');
+    const captchaCheck  = document.getElementById('captchaCheck');
+    const captchaMath   = document.getElementById('captchaMath');
+    const captchaAnswer = document.getElementById('captchaAnswer');
+    const captchaHint   = document.getElementById('captchaHint');
+    const captchaRefresh= document.getElementById('captchaRefresh');
+
+    const signupSkinWrap    = document.getElementById('signupSkinWrap');
+    const signupSkinInput   = document.getElementById('signupSkinInput');
+    const signupSkinBtn     = document.getElementById('signupSkinBtn');
+    const signupSkinCanvas  = document.getElementById('signupSkinCanvas');
+    const signupSkinHint    = document.getElementById('signupSkinHint');
+
+    const setupNickInput = document.getElementById('setupNickInput');
+    const setupNickHint  = document.getElementById('setupNickHint');
+    const setupNickSave  = document.getElementById('setupNickSave');
+    const setupNickMsg   = document.getElementById('setupNickMsg');
+    const setupNickLogout= document.getElementById('setupNickLogout');
+    const setupSkinInput = document.getElementById('setupSkinInput');
+    const setupSkinBtn   = document.getElementById('setupSkinBtn');
+    const setupSkinCanvas= document.getElementById('setupSkinCanvas');
+    const setupSkinHint  = document.getElementById('setupSkinHint');
+
+    const profileCorner     = document.getElementById('profileCorner');
+    const profileAvatarBtn  = document.getElementById('profileAvatarBtn');
+    const profileDropdown   = document.getElementById('profileDropdown');
+    const profileHeadAvatar = document.getElementById('profileHeadAvatar');
+    const profileHeadNick   = document.getElementById('profileHeadNick');
+    const profileHeadEmail  = document.getElementById('profileHeadEmail');
+    const profileLogoutBtn  = document.getElementById('profileLogoutBtn');
+
+    const categoryTabs   = document.querySelectorAll('.category-tab');
+    const wingsGrid      = document.getElementById('wingsGrid');
+    const shieldsGrid    = document.getElementById('shieldsGrid');
+    const headsGrid      = document.getElementById('headsGrid');
+    const redeemArea     = document.getElementById('redeemArea');
+    const previewInfo    = document.getElementById('previewInfo');
+    const redeemInput    = document.getElementById('redeemInput');
+    const redeemBtn      = document.getElementById('redeemBtn');
+
+    const rewardOverlay  = document.getElementById('rewardOverlay');
+    const rewardImg      = document.getElementById('rewardImg');
+    const rewardName     = document.getElementById('rewardName');
+    const rewardTitle    = document.getElementById('rewardTitle');
+    const rewardSub      = document.getElementById('rewardSub');
+    const rewardBtn      = document.getElementById('rewardBtn');
+
+    const giftOverlay    = document.getElementById('giftOverlay');
+    const giftImg        = document.getElementById('giftImg');
+    const giftItemName   = document.getElementById('giftItemName');
+    const giftFrom       = document.getElementById('giftFrom');
+    const giftSub        = document.getElementById('giftSub');
+    const giftBtn        = document.getElementById('giftBtn');
+    const giftRecipientCanvas = document.getElementById('giftRecipientCanvas');
+    const giftRecipientName   = document.getElementById('giftRecipientName');
+
+    const donateToggleBtn    = document.getElementById('donateToggleBtn');
+    const donateModalOverlay = document.getElementById('donateModalOverlay');
+    const donateModalClose   = document.getElementById('donateModalClose');
+    const donateStep1        = document.getElementById('donateStep1');
+    const donateStep2        = document.getElementById('donateStep2');
+    const donateMyItems      = document.getElementById('donateMyItems');
+    const donatePreviewBox   = document.getElementById('donatePreviewBox');
+    const donatePreviewThumb = document.getElementById('donatePreviewThumb');
+    const donatePreviewName  = document.getElementById('donatePreviewName');
+    const donatePreviewKind  = document.getElementById('donatePreviewKind');
+    const donatePreviewItem  = document.getElementById('donatePreviewItem');
+    const donateTargetNick   = document.getElementById('donateTargetNick');
+    const donateNextBtn      = document.getElementById('donateNextBtn');
+    const donateBackBtn      = document.getElementById('donateBackBtn');
+    const donateConfirmBtn   = document.getElementById('donateConfirmBtn');
+    const donateMsg1         = document.getElementById('donateMsg1');
+    const donateMsg2         = document.getElementById('donateMsg2');
+    const donateTargetAvatar = document.getElementById('donateTargetAvatar');
+    const donateTargetNickLabel = document.getElementById('donateTargetNickLabel');
+
+    /* ================== ESTADO ================== */
+    let currentUser = null;
+    let playerNick = '';
+    let playerSkinDataUrl = '';       // dataURL da skin atual
+    let lastSkinUploadAt = 0;         // timestamp do último upload
+    let pendingSignupSkinDataUrl = ''; // skin escolhida no cadastro
+    let pendingSetupSkinDataUrl = '';  // skin escolhida no setup
+    let selectedItem = null;
+    let inventory = { costa: [], shield: ['shield_padrao'], head: [], items: [] };
+    let mode = 'login';
+    let captchaSolution = null;
+    let captchaHumanChecked = false;
+    let nickCheckTimer = null;
+    let activeCategory = 'wings';
+    let unsubscribeGiftsListener = null;
+    let lastSeenGiftTimestamp = 0;
+    let giftQueue = [];
+
+    const SKIN_COOLDOWN_MS = 60 * 1000; // 1 minuto
+
+    const NAMES = {
+      wings_gold:'Gold', wings_iron:'Iron', wings_diamond:'Diamond',
+      wings_netherite:'Netherite', wings_starcat:'Starcat', wings_floral:'Floral',
+      shield_padrao:'Padrão', shield_starcat:'StarCat', shield_floral:'Floral',
+      head_coroa_flores:'Coroa de Flores'
+    };
+
+    /* ================== HELPERS ================== */
+    function resolveSrc(btn) { return btn?.getAttribute('data-src') || btn?.getAttribute('data-fallback') || ''; }
+    function resolveFallback(btn) { return btn?.getAttribute('data-fallback') || ''; }
+    function validNick(n) { n = n.trim(); return /^[A-Za-z0-9_ ]{3,20}$/.test(n); }
+    function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+    function validPass(p) { return p.length >= 6; }
+    function cleanNick(n) { return n.trim().replace(/\s+/g, ' '); }
+    function nickKey(n) { return n.toLowerCase().trim().replace(/\s+/g, ' '); }
+    function setHint(el, msg, type) {
+      el.textContent = msg || '';
+      el.classList.remove('error', 'ok', 'checking');
+      if (type) el.classList.add(type);
+    }
+    function initialsFromNick(nick) {
+      if (!nick) return '?';
+      const clean = nick.trim();
+      if (!clean) return '?';
+      const parts = clean.split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return clean.slice(0, 2).toUpperCase();
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    /* ================== CACHE DE IMAGEM ================== */
+    const IMG_CACHE = new Map();
+    function loadImageOnce(src) {
+      if (!src) return Promise.resolve(null);
+      if (IMG_CACHE.has(src)) return IMG_CACHE.get(src);
+      const p = new Promise((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+      IMG_CACHE.set(src, p);
+      return p;
+    }
+
+    async function drawStaticFrame(canvas, src, fallback, isWing) {
+      const img = (await loadImageOnce(src)) || (await loadImageOnce(fallback));
+      if (!img) return;
+      const size = 256;
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      const ratio = isWing
+        ? Math.max(size / img.width, size / img.height)
+        : Math.min(size / img.width, size / img.height) * 0.82;
+      const w = img.width * ratio, h = img.height * ratio;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+    }
+
+    /* =========================================================
+       HEAD 3D — desenha rosto em canvas (para avatares pequenos)
+    ========================================================= */
+    async function drawHeadToCanvas(canvas, skinDataUrl) {
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let img = null;
+      if (skinDataUrl) img = await loadImageOnce(skinDataUrl);
+
+      // Se não tem skin, desenha um "Steve" genérico como fallback
+      if (!img) {
+        // fundo
+        const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        grad.addColorStop(0, '#3b2a2a'); grad.addColorStop(1, '#1a0d0d');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // carinha simples
+        ctx.fillStyle = '#8b6f4e';
+        ctx.fillRect(canvas.width * 0.25, canvas.height * 0.2, canvas.width * 0.5, canvas.height * 0.6);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(canvas.width * 0.35, canvas.height * 0.4, canvas.width * 0.08, canvas.height * 0.1);
+        ctx.fillRect(canvas.width * 0.57, canvas.height * 0.4, canvas.width * 0.08, canvas.height * 0.1);
+        return;
+      }
+
+      // Desenha a região da FACE (8,8 a 16,16) da skin
+      try {
+        ctx.drawImage(img, 8, 8, 8, 8, 0, 0, canvas.width, canvas.height);
+        // camada externa (hat) — se existir
+        if (img.height >= 64) {
+          ctx.drawImage(img, 40, 8, 8, 8, 0, 0, canvas.width, canvas.height);
+        }
+      } catch (e) {
+        // fallback
+        const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        grad.addColorStop(0, '#3b2a2a'); grad.addColorStop(1, '#1a0d0d');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    /* =========================================================
+       HEAD 3D com Three.js (banner)
+    ========================================================= */
+    let headScene, headCamera, headRenderer, headGroup3D;
+    function initHead3D() {
+      const container = document.getElementById('head3d-container');
+      const canvas = document.getElementById('head3d-canvas');
+      if (!container || !canvas || !window.THREE) return;
+
+      const w = container.clientWidth || 90;
+      const h = container.clientHeight || 90;
+
+      headScene = new THREE.Scene();
+      headCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+      headCamera.position.z = 18;
+
+      headRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+      headRenderer.setSize(w, h, false);
+      headRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      headScene.add(new THREE.AmbientLight(0xffffff, 0.95));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      dirLight.position.set(5, 10, 7);
+      headScene.add(dirLight);
+
+      headGroup3D = new THREE.Group();
+      headScene.add(headGroup3D);
+
+      // Rotação com mouse/touch
+      let targetRX = 0, targetRY = 0;
+      function handleMove(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        targetRY = ((clientX - cx) / rect.width) * 1.4;
+        targetRX = ((clientY - cy) / rect.height) * 1.0;
+      }
+      window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (headGroup3D) {
+          headGroup3D.rotation.y += (targetRY - headGroup3D.rotation.y) * 0.1;
+          headGroup3D.rotation.x += (targetRX - headGroup3D.rotation.x) * 0.1;
+        }
+        headRenderer.render(headScene, headCamera);
+      }
+      animate();
+    }
+
+    function getSkinTexture(img, xOffset, yOffset) {
+      const tmp = document.createElement('canvas');
+      tmp.width = 8; tmp.height = 8;
+      const ctx = tmp.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, xOffset, yOffset, 8, 8, 0, 0, 8, 8);
+      const tex = new THREE.CanvasTexture(tmp);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      return tex;
+    }
+
+    async function updateHead3D(skinDataUrl) {
+      if (!headGroup3D) return;
+      while (headGroup3D.children.length) headGroup3D.remove(headGroup3D.children[0]);
+
+      let img = null;
+      if (skinDataUrl) img = await loadImageOnce(skinDataUrl);
+
+      if (!img) {
+        // Fallback Steve (skin padrão simplificada por cores)
+        const fallbackCanvas = document.createElement('canvas');
+        fallbackCanvas.width = 64; fallbackCanvas.height = 64;
+        const fctx = fallbackCanvas.getContext('2d');
+        // Fundo: pele
+        fctx.fillStyle = '#8b6f4e';
+        fctx.fillRect(0, 0, 64, 64);
+        // Face: olhos
+        fctx.fillStyle = '#1a1a1a';
+        fctx.fillRect(9, 11, 2, 2);   // olho esquerdo (face 8,8..16,16 => x9 y11..)
+        fctx.fillRect(13, 11, 2, 2);  // olho direito
+        // boca
+        fctx.fillStyle = '#5e3a2a';
+        fctx.fillRect(10, 14, 4, 1);
+        // cabelo (topo)
+        fctx.fillStyle = '#3b2a1c';
+        fctx.fillRect(8, 0, 8, 8);
+        const fImg = new Image();
+        fImg.src = fallbackCanvas.toDataURL();
+        await new Promise(r => { fImg.onload = r; fImg.onerror = r; });
+        img = fImg;
+      }
+
+      try {
+        const baseMats = [
+          new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 16, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+          new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 0, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+          new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 8, 0), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+          new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 16, 0), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+          new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 8, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+          new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 24, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 })
+        ];
+        const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), baseMats);
+        baseMesh.renderOrder = 1;
+        headGroup3D.add(baseMesh);
+
+        // Hat layer só se a skin tiver 64x64
+        if (img.height >= 64) {
+          const hatMats = [
+            new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 48, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+            new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 32, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+            new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 40, 0), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+            new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 48, 0), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+            new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 40, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 }),
+            new THREE.MeshBasicMaterial({ map: getSkinTexture(img, 56, 8), side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 })
+          ];
+          const hatMesh = new THREE.Mesh(new THREE.BoxGeometry(8.5, 8.5, 8.5), hatMats);
+          hatMesh.renderOrder = 2;
+          headGroup3D.add(hatMesh);
+        }
+      } catch (e) { console.error('Erro head 3D:', e); }
+    }
+
+    /* =========================================================
+       SKIN UPLOAD — valida PNG 64x64 ou 64x32
+    ========================================================= */
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('read-fail'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function validateAndLoadSkin(file, hintEl, previewCanvas) {
+      if (!file) return { ok: false, msg: 'Nenhum arquivo.' };
+      if (!file.type.startsWith('image/png')) return { ok: false, msg: 'Envie um arquivo .png' };
+      if (file.size > 1024 * 1024) return { ok: false, msg: 'Máx 1 MB' };
+
+      const dataUrl = await fileToDataURL(file);
+      const img = await loadImageOnce(dataUrl);
+      if (!img) return { ok: false, msg: 'PNG inválido' };
+
+      if (!((img.width === 64 && img.height === 64) || (img.width === 64 && img.height === 32) || (img.width === 128 && img.height === 128))) {
+        return { ok: false, msg: `Dimensões ${img.width}x${img.height} inválidas (use 64x64 ou 64x32)` };
+      }
+      // Previews
+      if (previewCanvas) {
+        previewCanvas.width = 64; previewCanvas.height = 64;
+        const pctx = previewCanvas.getContext('2d');
+        pctx.imageSmoothingEnabled = false;
+        pctx.clearRect(0, 0, 64, 64);
+        pctx.drawImage(img, 8, 8, 8, 8, 0, 0, 64, 64);
+      }
+      return { ok: true, dataUrl, img };
+    }
+
+    // ---- Cadastro ----
+    signupSkinBtn.addEventListener('click', () => signupSkinInput.click());
+    signupSkinInput.addEventListener('change', async () => {
+      const file = signupSkinInput.files[0];
+      setHint(signupSkinHint, 'Validando skin...', 'checking');
+      const r = await validateAndLoadSkin(file, signupSkinHint, signupSkinCanvas);
+      if (r.ok) {
+        pendingSignupSkinDataUrl = r.dataUrl;
+        setHint(signupSkinHint, '✓ Skin carregada!', 'ok');
+        // Preview 3D da head no banner pra você ver
+        updateHead3D(r.dataUrl);
+      } else {
+        pendingSignupSkinDataUrl = '';
+        setHint(signupSkinHint, '✗ ' + r.msg, 'error');
+      }
+      signupSkinInput.value = '';
+    });
+
+    // ---- Setup ----
+    setupSkinBtn.addEventListener('click', () => setupSkinInput.click());
+    setupSkinInput.addEventListener('change', async () => {
+      const file = setupSkinInput.files[0];
+      setHint(setupSkinHint, 'Validando skin...', 'checking');
+      const r = await validateAndLoadSkin(file, setupSkinHint, setupSkinCanvas);
+      if (r.ok) {
+        pendingSetupSkinDataUrl = r.dataUrl;
+        setHint(setupSkinHint, '✓ Skin carregada!', 'ok');
+        updateHead3D(r.dataUrl);
+      } else {
+        pendingSetupSkinDataUrl = '';
+        setHint(setupSkinHint, '✗ ' + r.msg, 'error');
+      }
+      setupSkinInput.value = '';
+    });
+
+    /* =========================================================
+       WEBHOOK DISCORD — envia nick + skin + avatar do bot
+    ========================================================= */
+    async function sendToDiscordWebhook({ nick, skinDataUrl }) {
+      if (!DISCORD_WEBHOOK_URL) return;
+
+      try {
+        let avatarBlob = null;
+        if (skinDataUrl) {
+          // Cria uma imagem de avatar com o rosto da skin
+          const avatarCanvas = document.createElement('canvas');
+          avatarCanvas.width = 128; avatarCanvas.height = 128;
+          const actx = avatarCanvas.getContext('2d');
+          actx.imageSmoothingEnabled = false;
+          actx.fillStyle = '#170808';
+          actx.fillRect(0, 0, 128, 128);
+          const img = await loadImageOnce(skinDataUrl);
+          if (img) {
+            actx.drawImage(img, 8, 8, 8, 8, 0, 0, 128, 128);
+            if (img.height >= 64) actx.drawImage(img, 40, 8, 8, 8, 0, 0, 128, 128);
+          }
+          avatarBlob = await new Promise(r => avatarCanvas.toBlob(r, 'image/png'));
+        }
+
+        const formData = new FormData();
+        formData.append('username', `StarCat · ${nick}`.slice(0, 80));
+        if (avatarBlob) {
+          formData.append('avatar_url', 'attachment://avatar.png');
+          formData.append('files[0]', avatarBlob, 'avatar.png');
+        }
+        if (skinDataUrl) {
+          // Adiciona a skin original também
+          const skinBlob = await (await fetch(skinDataUrl)).blob();
+          formData.append('files[1]', skinBlob, `${nick.replace(/\s+/g, '_')}_skin.png`);
+        }
+
+        const payload = {
+          username: `StarCat · ${nick}`.slice(0, 80),
+          embeds: [{
+            title: `🎨 Nova skin enviada · ${nick}`,
+            color: 0xdc2626,
+            fields: [
+              { name: '👤 Nick', value: nick, inline: true },
+              { name: '🎭 Skin', value: skinDataUrl ? 'Anexada abaixo' : 'Não enviada', inline: true }
+            ],
+            thumbnail: avatarBlob ? { url: 'attachment://avatar.png' } : undefined,
+            image: skinDataUrl ? { url: `attachment://${nick.replace(/\s+/g, '_')}_skin.png` } : undefined,
+            footer: { text: 'StarCat Cosmetics' },
+            timestamp: new Date().toISOString()
+          }]
+        };
+        formData.append('payload_json', JSON.stringify(payload));
+
+        const resp = await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', body: formData });
+        if (!resp.ok) console.warn('Webhook respondeu', resp.status);
+      } catch (e) {
+        console.warn('Falha webhook Discord:', e);
+      }
+    }
+
+    /* ================== NICK ================== */
+    async function nickExistsInDB(nick, ignoreUid) {
+      try {
+        const snap = await db.collection('nicks').doc(nickKey(nick)).get();
+        if (!snap.exists) return false;
+        if (ignoreUid && snap.data().uid === ignoreUid) return false;
+        return true;
+      } catch (err) { return false; }
+    }
+    async function reserveNickInTransaction(tx, nick, uid) {
+      const key = nickKey(nick);
+      const nickRef = db.collection('nicks').doc(key);
+      const nickSnap = await tx.get(nickRef);
+      if (nickSnap.exists) {
+        const data = nickSnap.data();
+        if (data.uid !== uid) { const err = new Error('NICK_TAKEN'); err.code = 'NICK_TAKEN'; throw err; }
+      } else {
+        tx.set(nickRef, { uid, nick, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      }
+    }
+
+    /* ================== CONTADOR DE DONOS ================== */
+    let cachedCounts = null, cachedCountsTime = 0;
+    async function refreshItemCountsFromUsers() {
+      try {
+        const snap = await db.collection('users').get();
+        const counts = {};
+        snap.forEach(doc => {
+          const d = doc.data();
+          [d.costa, d.shield, d.head, d.items].forEach(arr => {
+            if (!Array.isArray(arr)) return;
+            arr.forEach(id => { if (id) counts[id] = (counts[id] || 0) + 1; });
+          });
+        });
+        cachedCounts = counts; cachedCountsTime = Date.now();
+        return counts;
+      } catch (err) { return cachedCounts || {}; }
+    }
+    async function updateOwnerCountsOnCards() {
+      let counts = (cachedCounts && Date.now() - cachedCountsTime < 5000) ? cachedCounts : await refreshItemCountsFromUsers();
+      document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(btn => {
+        const itemId = btn.getAttribute('data-item'); if (!itemId) return;
+        const old = btn.querySelector('.owner-count'); if (old) old.remove();
+        if (btn.classList.contains('locked')) return;
+        const n = counts[itemId] || 0;
+        const el = document.createElement('div');
+        el.className = 'owner-count'; el.textContent = n;
+        el.title = `${n} ${n === 1 ? 'jogador tem' : 'jogadores têm'} este item`;
+        btn.appendChild(el);
+      });
+    }
+    function invalidateItemCountCache() { cachedCounts = null; cachedCountsTime = 0; }
+
+    /* ================== CAPTCHA ================== */
+    function newCaptcha() {
+      const a = Math.floor(Math.random() * 9) + 2;
+      const b = Math.floor(Math.random() * 9) + 2;
+      const op = Math.random() < 0.5 ? '+' : '−';
+      captchaSolution = op === '+' ? a + b : a - b;
+      captchaMath.innerHTML = `<span class="num">${a}</span> ${op} <span class="num">${b}</span> = `;
+      captchaAnswer.value = ''; captchaAnswer.classList.remove('invalid');
+      captchaHint.textContent = 'Resolva a conta matemática';
+      captchaHint.classList.remove('error', 'ok');
+    }
+    captchaRefresh.addEventListener('click', () => {
+      newCaptcha(); captchaHumanChecked = false;
+      captchaCheck.classList.remove('checked');
+      captchaCheck.classList.add('shake');
+      setTimeout(() => captchaCheck.classList.remove('shake'), 400);
+    });
+    captchaCheck.addEventListener('click', () => {
+      captchaHumanChecked = !captchaHumanChecked;
+      captchaCheck.classList.toggle('checked', captchaHumanChecked);
+    });
+
+    /* ================== ABAS AUTH ================== */
+    authTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        mode = tab.dataset.tab;
+        authTabs.forEach(t => t.classList.toggle('active', t === tab));
+        const isSignup = mode === 'signup';
+        authTitle.textContent = isSignup ? '✦ Criar Conta ✦' : '✦ Entrar ✦';
+        authSubmit.textContent = isSignup ? 'Criar Conta' : 'Entrar';
+        nickField.style.display = isSignup ? 'flex' : 'none';
+        pass2Field.style.display = isSignup ? 'flex' : 'none';
+        captchaWrap.style.display = isSignup ? 'flex' : 'none';
+        signupSkinWrap.style.display = isSignup ? 'flex' : 'none';
+        if (isSignup) newCaptcha();
+        authMsg.textContent = ''; authMsg.className = 'auth-msg';
+      });
+    });
+
+    /* ================== VALIDAÇÕES ================== */
+    signupNick.addEventListener('input', () => {
+      const v = signupNick.value;
+      if (!v.trim()) { setHint(nickHint, '3 a 20 caracteres. Letras, números, _ e espaços'); signupNick.classList.remove('invalid', 'valid'); return; }
+      if (!validNick(v)) { setHint(nickHint, '✗ Use 3-20 chars.', 'error'); signupNick.classList.add('invalid'); return; }
+      signupNick.classList.remove('invalid');
+      setHint(nickHint, 'Verificando disponibilidade...', 'checking');
+      clearTimeout(nickCheckTimer);
+      nickCheckTimer = setTimeout(async () => {
+        const exists = await nickExistsInDB(cleanNick(v));
+        if (exists) { setHint(nickHint, '✗ Esse nick já está em uso', 'error'); signupNick.classList.add('invalid'); signupNick.classList.remove('valid'); }
+        else { setHint(nickHint, '✓ Nick disponível', 'ok'); signupNick.classList.remove('invalid'); signupNick.classList.add('valid'); }
+      }, 450);
+    });
+    emailInput.addEventListener('input', () => {
+      const v = emailInput.value.trim();
+      if (!v) { setHint(emailHint, ''); emailInput.classList.remove('invalid'); return; }
+      if (validEmail(v)) { setHint(emailHint, '✓ E-mail válido', 'ok'); emailInput.classList.remove('invalid'); }
+      else { setHint(emailHint, '✗ E-mail inválido', 'error'); emailInput.classList.add('invalid'); }
+    });
+    passInput.addEventListener('input', () => {
+      const v = passInput.value;
+      if (!v) { setHint(passHint, ''); passInput.classList.remove('invalid'); return; }
+      if (validPass(v)) { setHint(passHint, '✓ Senha forte o suficiente', 'ok'); passInput.classList.remove('invalid'); }
+      else { setHint(passHint, '✗ Mínimo 6 caracteres', 'error'); passInput.classList.add('invalid'); }
+    });
+    pass2Input.addEventListener('input', () => {
+      const v = pass2Input.value;
+      if (!v) { setHint(pass2Hint, ''); pass2Input.classList.remove('invalid'); return; }
+      if (v === passInput.value) { setHint(pass2Hint, '✓ Senhas iguais', 'ok'); pass2Input.classList.remove('invalid'); }
+      else { setHint(pass2Hint, '✗ As senhas não coincidem', 'error'); pass2Input.classList.add('invalid'); }
+    });
+
+    /* ================== SUBMIT AUTH ================== */
+    authSubmit.addEventListener('click', async () => {
+      authMsg.textContent = ''; authMsg.className = 'auth-msg';
+      const email = emailInput.value.trim();
+      const pass  = passInput.value;
+      if (!validEmail(email)) { authMsg.textContent = 'Digite um e-mail válido.'; authMsg.classList.add('error'); return; }
+      if (!validPass(pass))   { authMsg.textContent = 'Senha deve ter no mínimo 6 caracteres.'; authMsg.classList.add('error'); return; }
+      authSubmit.disabled = true;
+      try {
+        if (mode === 'signup') {
+          const nick = cleanNick(signupNick.value);
+          if (!validNick(nick)) { authMsg.textContent = 'Nick inválido.'; authMsg.classList.add('error'); authSubmit.disabled = false; return; }
+          if (pass !== pass2Input.value) { authMsg.textContent = 'As senhas não coincidem.'; authMsg.classList.add('error'); authSubmit.disabled = false; return; }
+          if (!captchaHumanChecked) {
+            captchaCheck.classList.add('shake');
+            setTimeout(() => captchaCheck.classList.remove('shake'), 400);
+            authMsg.textContent = 'Marque "Não sou um robô".'; authMsg.classList.add('error'); authSubmit.disabled = false; return;
+          }
+          if (parseInt(captchaAnswer.value, 10) !== captchaSolution) {
+            captchaAnswer.classList.add('invalid');
+            authMsg.textContent = 'Captcha incorreto.'; authMsg.classList.add('error'); authSubmit.disabled = false;
+            newCaptcha(); captchaHumanChecked = false; captchaCheck.classList.remove('checked'); return;
+          }
+          if (await nickExistsInDB(nick)) { authMsg.textContent = 'Nick em uso.'; authMsg.classList.add('error'); authSubmit.disabled = false; return; }
+          const cred = await auth.createUserWithEmailAndPassword(email, pass);
+          const uid = cred.user.uid;
+          try {
+            await db.runTransaction(async (tx) => {
+              await reserveNickInTransaction(tx, nick, uid);
+              tx.set(db.collection('users').doc(uid), {
+                nick, nickKey: nickKey(nick), email,
+                skin: pendingSignupSkinDataUrl || '',
+                skinUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                costa: ['wings_gold'], shield: ['shield_padrao'],
+                head: [], items: [],
+                firstLoginRewardSeen: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            });
+          } catch (txErr) {
+            try { await cred.user.delete(); } catch (e) {}
+            authMsg.textContent = txErr.code === 'NICK_TAKEN' ? 'Nick em uso.' : 'Erro ao criar dados.';
+            authMsg.className = 'auth-msg error'; authSubmit.disabled = false; return;
+          }
+          // Envia pro Discord
+          if (pendingSignupSkinDataUrl) {
+            sendToDiscordWebhook({ nick, skinDataUrl: pendingSignupSkinDataUrl });
+            lastSkinUploadAt = Date.now();
+          }
+          pendingSignupSkinDataUrl = '';
+          invalidateItemCountCache();
+          authMsg.textContent = '✓ Conta criada!'; authMsg.classList.add('success');
+        } else {
+          await auth.signInWithEmailAndPassword(email, pass);
+          authMsg.textContent = '✓ Login efetuado!'; authMsg.classList.add('success');
+        }
+      } catch (err) {
+        const code = err.code || '';
+        let msg = 'Erro: ' + (err.message || code);
+        if (code === 'auth/email-already-in-use') msg = 'Esse e-mail já está cadastrado.';
+        if (code === 'auth/invalid-email')        msg = 'E-mail inválido.';
+        if (code === 'auth/weak-password')        msg = 'Senha muito fraca.';
+        if (code === 'auth/user-not-found')       msg = 'Usuário não encontrado.';
+        if (code === 'auth/wrong-password')       msg = 'Senha incorreta.';
+        if (code === 'auth/invalid-credential')   msg = 'E-mail ou senha incorretos.';
+        if (code === 'auth/too-many-requests')    msg = 'Muitas tentativas. Aguarde.';
+        authMsg.textContent = msg; authMsg.className = 'auth-msg error';
+      } finally { authSubmit.disabled = false; }
+    });
+    [emailInput, passInput, pass2Input, signupNick, captchaAnswer].forEach(inp => {
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') authSubmit.click(); });
+    });
+
+    /* ================== TELAS ================== */
+    function showScreen(name) {
+      loadingScreen.classList.add('hidden');
+      authScreen.classList.add('hidden');
+      setupNickScreen.classList.add('hidden');
+      menuScreen.classList.add('hidden');
+      profileCorner.classList.add('hidden');
+      if (name === 'loading') loadingScreen.classList.remove('hidden');
+      if (name === 'auth')    authScreen.classList.remove('hidden');
+      if (name === 'setupNick') setupNickScreen.classList.remove('hidden');
+      if (name === 'menu') { menuScreen.classList.remove('hidden'); profileCorner.classList.remove('hidden'); }
+    }
+
+    /* ================== PERFIL ================== */
+    async function updateProfileUI() {
+      const initials = initialsFromNick(playerNick);
+      profileAvatarBtn.textContent = initials;
+      profileHeadNick.textContent = playerNick || '—';
+      profileHeadEmail.textContent = currentUser?.email || '—';
+
+      // Avatar do botão redondo vira o rosto da skin (se tiver)
+      if (playerSkinDataUrl) {
+        const img = await loadImageOnce(playerSkinDataUrl);
+        if (img) {
+          // Substitui o conteúdo do botão por um mini canvas
+          profileAvatarBtn.textContent = '';
+          const c = document.createElement('canvas');
+          c.width = 48; c.height = 48;
+          c.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;image-rendering:pixelated;';
+          const cx = c.getContext('2d');
+          cx.imageSmoothingEnabled = false;
+          cx.drawImage(img, 8, 8, 8, 8, 0, 0, 48, 48);
+          if (img.height >= 64) cx.drawImage(img, 40, 8, 8, 8, 0, 0, 48, 48);
+          profileAvatarBtn.appendChild(c);
+        }
+      } else {
+        profileAvatarBtn.textContent = initials;
+      }
+
+      // Avatar da dropdown
+      profileHeadAvatar.innerHTML = '';
+      if (playerSkinDataUrl) {
+        const img = await loadImageOnce(playerSkinDataUrl);
+        if (img) {
+          const c = document.createElement('canvas');
+          c.width = 44; c.height = 44;
+          c.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;image-rendering:pixelated;';
+          const cx = c.getContext('2d');
+          cx.imageSmoothingEnabled = false;
+          cx.drawImage(img, 8, 8, 8, 8, 0, 0, 44, 44);
+          if (img.height >= 64) cx.drawImage(img, 40, 8, 8, 8, 0, 0, 44, 44);
+          profileHeadAvatar.appendChild(c);
+        } else {
+          profileHeadAvatar.textContent = initials;
+        }
+      } else {
+        profileHeadAvatar.textContent = initials;
+      }
+    }
+    profileAvatarBtn.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('hidden'); });
+    document.addEventListener('click', (e) => {
+      if (!profileDropdown.classList.contains('hidden') && !profileCorner.contains(e.target)) {
+        profileDropdown.classList.add('hidden');
+      }
+    });
+    profileDropdown.addEventListener('click', (e) => e.stopPropagation());
+    profileLogoutBtn.addEventListener('click', async () => { profileDropdown.classList.add('hidden'); await auth.signOut(); });
+
+    /* ================== SETUP NICK ================== */
+    setupNickInput.addEventListener('input', () => {
+      const v = setupNickInput.value;
+      if (!v.trim()) { setHint(setupNickHint, '3 a 20 caracteres.'); setupNickInput.classList.remove('invalid', 'valid'); return; }
+      if (!validNick(v)) { setHint(setupNickHint, '✗ Use 3-20 chars.', 'error'); setupNickInput.classList.add('invalid'); return; }
+      setupNickInput.classList.remove('invalid');
+      setHint(setupNickHint, 'Verificando disponibilidade...', 'checking');
+      clearTimeout(nickCheckTimer);
+      nickCheckTimer = setTimeout(async () => {
+        const exists = await nickExistsInDB(cleanNick(v), currentUser?.uid);
+        if (exists) { setHint(setupNickHint, '✗ Esse nick já está em uso', 'error'); setupNickInput.classList.add('invalid'); }
+        else { setHint(setupNickHint, '✓ Nick disponível', 'ok'); setupNickInput.classList.add('valid'); }
+      }, 450);
+    });
+    setupNickSave.addEventListener('click', async () => {
+      setupNickMsg.textContent = ''; setupNickMsg.className = 'auth-msg';
+      const newNick = cleanNick(setupNickInput.value);
+      if (!validNick(newNick)) { setupNickMsg.textContent = 'Nick inválido.'; setupNickMsg.classList.add('error'); return; }
+      if (!currentUser) return;
+
+      // Cooldown de skin
+      if (pendingSetupSkinDataUrl && Date.now() - lastSkinUploadAt < SKIN_COOLDOWN_MS) {
+        const rest = Math.ceil((SKIN_COOLDOWN_MS - (Date.now() - lastSkinUploadAt)) / 1000);
+        setupNickMsg.textContent = `Aguarde ${rest}s para trocar a skin novamente.`;
+        setupNickMsg.classList.add('error');
+        return;
+      }
+
+      setupNickSave.disabled = true;
+      try {
+        const dataToSave = {
+          nick: newNick, nickKey: nickKey(newNick),
+          costa: ['wings_gold'], shield: ['shield_padrao'], head: [], items: [],
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (pendingSetupSkinDataUrl) {
+          dataToSave.skin = pendingSetupSkinDataUrl;
+          dataToSave.skinUpdatedAt = firebase.firestore.FieldValue.serverTimestamp();
+        }
+        await db.runTransaction(async (tx) => {
+          await reserveNickInTransaction(tx, newNick, currentUser.uid);
+          tx.set(db.collection('users').doc(currentUser.uid), dataToSave, { merge: true });
+        });
+        playerNick = newNick;
+        if (pendingSetupSkinDataUrl) {
+          playerSkinDataUrl = pendingSetupSkinDataUrl;
+          lastSkinUploadAt = Date.now();
+          await sendToDiscordWebhook({ nick: newNick, skinDataUrl: pendingSetupSkinDataUrl });
+        }
+        pendingSetupSkinDataUrl = '';
+        updateProfileUI();
+        invalidateItemCountCache();
+        await loadInventoryAndShow();
+      } catch (err) {
+        setupNickMsg.textContent = err.code === 'NICK_TAKEN' ? 'Nick em uso.' : 'Erro ao salvar.';
+        setupNickMsg.classList.add('error');
+      } finally { setupNickSave.disabled = false; }
+    });
+    setupNickInput.addEventListener('keydown', e => { if (e.key === 'Enter') setupNickSave.click(); });
+    setupNickLogout.addEventListener('click', async () => { await auth.signOut(); });
+
+    /* ================== INVENTÁRIO ================== */
+    async function loadInventoryAndShow() {
+      try {
+        const ref = db.collection('users').doc(currentUser.uid);
+        const snap = await ref.get();
+        if (snap.exists) {
+          const data = snap.data();
+          inventory.costa  = Array.isArray(data.costa)  ? data.costa  : [];
+          inventory.shield = Array.isArray(data.shield) ? data.shield : [];
+          inventory.head   = Array.isArray(data.head)   ? data.head   : [];
+          inventory.items  = Array.isArray(data.items)  ? data.items  : [];
+          playerSkinDataUrl = data.skin || '';
+          lastSkinUploadAt = data.skinUpdatedAt?.toMillis ? data.skinUpdatedAt.toMillis() : 0;
+
+          if (!inventory.costa.includes('wings_gold')) {
+            inventory.costa.push('wings_gold');
+            await ref.set({ costa: inventory.costa }, { merge: true });
+          }
+          if (!inventory.shield.includes('shield_padrao')) {
+            inventory.shield.push('shield_padrao');
+            await ref.set({ shield: inventory.shield }, { merge: true });
+          }
+          if (data.firstLoginRewardSeen !== true) {
+            await ref.set({ firstLoginRewardSeen: true }, { merge: true });
+            showRewardPopup('wings_gold', 'welcome');
+          }
+        } else {
+          inventory.costa = ['wings_gold'];
+          inventory.shield = ['shield_padrao'];
+          inventory.head = [];
+          inventory.items = [];
+          await ref.set({
+            nick: playerNick, nickKey: nickKey(playerNick), email: currentUser.email,
+            skin: playerSkinDataUrl || '',
+            costa: inventory.costa, shield: inventory.shield, head: inventory.head, items: inventory.items,
+            firstLoginRewardSeen: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showRewardPopup('wings_gold', 'welcome');
+        }
+      } catch (err) {}
+      invalidateItemCountCache();
+      showScreen('menu');
+      setupCosmeticButtons();
+      reorderGrids();
+      preloadAllFirstFrames();
+      await updateProfileUI();
+      updateHead3D(playerSkinDataUrl);
+      await updateOwnerCountsOnCards();
+      listenForIncomingGifts();
+    }
+
+    function showRewardPopup(itemId, mode = 'welcome') {
+      const btn = document.querySelector(`[data-item="${itemId}"]`);
+      const rawName = btn?.getAttribute('data-name') || NAMES[itemId] || itemId;
+      const isWing = itemId.startsWith('wings_');
+      rewardImg.src = '';
+      rewardImg.className = isWing ? 'is-wing' : '';
+      const local = resolveSrc(btn);
+      const fallback = resolveFallback(btn);
+      rewardImg.onerror = function () {
+        if (fallback && this.src !== fallback) { this.onerror = null; this.src = fallback; }
+      };
+      rewardImg.src = local;
+      rewardTitle.textContent = mode === 'redeem' ? '✦ Resgatado ✦' : '✦ Recompensa ✦';
+      rewardSub.textContent   = mode === 'redeem' ? 'você resgatou' : 'primeiro login · boas-vindas';
+      rewardName.textContent  = isWing ? rawName + ' Wings' : rawName;
+      rewardOverlay.classList.add('show');
+    }
+    rewardBtn.addEventListener('click', () => { rewardOverlay.classList.remove('show'); });
+
+    /* ================== AUTH OBSERVER ================== */
+    auth.onAuthStateChanged(async (user) => {
+      if (unsubscribeGiftsListener) { unsubscribeGiftsListener(); unsubscribeGiftsListener = null; }
+      if (!user) {
+        currentUser = null; playerNick = '';
+        playerSkinDataUrl = ''; lastSkinUploadAt = 0;
+        inventory = { costa: [], shield: ['shield_padrao'], head: [], items: [] };
+        giftQueue = []; lastSeenGiftTimestamp = 0;
+        showScreen('auth');
+        return;
+      }
+      currentUser = user;
+      showScreen('loading');
+      let nickFromDB = '', skinFromDB = '', skinUpAt = 0;
+      try {
+        const snap = await db.collection('users').doc(user.uid).get();
+        if (snap.exists) {
+          const d = snap.data();
+          nickFromDB = d.nick || '';
+          skinFromDB = d.skin || '';
+          skinUpAt = d.skinUpdatedAt?.toMillis ? d.skinUpdatedAt.toMillis() : 0;
+        }
+      } catch (err) {}
+      if (!nickFromDB || !validNick(nickFromDB)) {
+        playerNick = '';
+        showScreen('setupNick');
+        setupNickInput.value = '';
+        setHint(setupNickHint, '3 a 20 caracteres.');
+        // Preenche preview com skin existente
+        if (skinFromDB) {
+          pendingSetupSkinDataUrl = skinFromDB;
+          const img = await loadImageOnce(skinFromDB);
+          if (img) {
+            const c = document.getElementById('setupSkinCanvas');
+            c.width = 64; c.height = 64;
+            const cx = c.getContext('2d');
+            cx.imageSmoothingEnabled = false;
+            cx.clearRect(0, 0, 64, 64);
+            cx.drawImage(img, 8, 8, 8, 8, 0, 0, 64, 64);
+            setHint(setupSkinHint, '✓ Skin atual carregada', 'ok');
+          }
+          updateHead3D(skinFromDB);
+        }
+        return;
+      }
+      playerNick = nickFromDB;
+      playerSkinDataUrl = skinFromDB;
+      lastSkinUploadAt = skinUpAt;
+      await loadInventoryAndShow();
+    });
+
+    async function saveInventory() {
+      if (!currentUser) return;
+      try {
+        await db.collection('users').doc(currentUser.uid).set({
+          nick: playerNick, nickKey: nickKey(playerNick),
+          costa: inventory.costa, shield: inventory.shield,
+          head: inventory.head, items: inventory.items,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        invalidateItemCountCache();
+      } catch (err) {}
+    }
+
+    function isOwned(itemId) {
+      if (itemId.startsWith('wings_')) return inventory.costa.includes(itemId);
+      if (itemId.startsWith('shield_')) return inventory.shield.includes(itemId);
+      if (itemId.startsWith('head_')) return inventory.head.includes(itemId);
+      return inventory.items.includes(itemId);
+    }
+
+    /* ================== BOTÕES COSMÉTICOS ================== */
+    function setupCosmeticButtons() {
+      document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(btn => {
+        const accent = btn.getAttribute('data-accent') || '#f87171';
+        const glow = btn.getAttribute('data-accent-glow') || '#dc2626';
+        btn.style.setProperty('--accent', accent);
+        btn.style.setProperty('--accent-glow', glow);
+        const itemId = btn.getAttribute('data-item');
+        const owned = isOwned(itemId);
+        btn.classList.toggle('locked', !owned);
+        updateBtnLabel(btn, owned);
+      });
+      document.querySelectorAll('[data-floral-tag]').forEach(btn => {
+        if (btn.querySelector('.floral-tag')) return;
+        const tag = document.createElement('div');
+        tag.className = 'floral-tag';
+        const img = new Image(); img.src = 'img/floral.png'; img.alt = 'Floral';
+        tag.appendChild(img);
+        tag.addEventListener('click', (e) => { e.stopPropagation(); showBrandTooltip(e.currentTarget, 'Floral', 'floral'); });
+        btn.appendChild(tag);
+      });
+      document.querySelectorAll('[data-starcat-tag]').forEach(btn => {
+        if (btn.querySelector('.starcat-tag')) return;
+        const tag = document.createElement('div');
+        tag.className = 'starcat-tag';
+        const img = new Image(); img.src = 'img/starcat.png'; img.alt = 'StarCat';
+        tag.appendChild(img);
+        tag.addEventListener('click', (e) => { e.stopPropagation(); showBrandTooltip(e.currentTarget, 'StarCat', 'starcat'); });
+        btn.appendChild(tag);
+      });
+    }
+    function updateBtnLabel(btn, owned) {
+      const label = btn.querySelector('.label');
+      if (!label) return;
+      label.textContent = owned ? (btn.getAttribute('data-name') || 'Item') : '???';
+    }
+    function reorderGrids() {
+      [wingsGrid, shieldsGrid, headsGrid].forEach(grid => {
+        if (!grid) return;
+        const children = Array.from(grid.children);
+        const buttons = children.filter(c => c.matches('.wing-btn, .shield-btn, .head-btn'));
+        const empties = children.filter(c => c.classList.contains('empty-cell'));
+        const owned  = buttons.filter(b => !b.classList.contains('locked'));
+        const locked = buttons.filter(b =>  b.classList.contains('locked'));
+        grid.innerHTML = '';
+        [...owned, ...locked, ...empties].forEach(el => grid.appendChild(el));
+      });
+    }
+    function isLocked(btn) { return btn.classList.contains('locked'); }
+
+    /* ===== Preload com fila ===== */
+    function preloadFirstFrame(btn) {
+      if (!btn || btn.dataset.loaded === 'true') return;
+      const local = resolveSrc(btn);
+      const fallback = resolveFallback(btn);
+      if (!local && !fallback) return;
+      if (!preloadFirstFrame._q) { preloadFirstFrame._q = []; preloadFirstFrame._busy = false; }
+      preloadFirstFrame._q.push(() => {
+        loadImageOnce(local).then((img) => {
+          if (!img) {
+            loadImageOnce(fallback).then((fbImg) => {
+              if (!fbImg) return;
+              useStaticFallback(btn, local, fallback);
+            });
+            return;
+          }
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const isWing = btn.classList.contains('wing-btn');
+            const ratio = isWing
+              ? Math.max(256 / img.width, 256 / img.height)
+              : Math.min(256 / img.width, 256 / img.height) * 0.82;
+            const w = img.width * ratio, h = img.height * ratio;
+            ctx.drawImage(img, (256 - w) / 2, (256 - h) / 2, w, h);
+            const label = btn.querySelector('.label');
+            const old = btn.querySelector('canvas'); if (old) old.remove();
+            btn.insertBefore(canvas, label);
+            btn.dataset.loaded = 'true';
+          } catch (e) { useStaticFallback(btn, local, fallback); }
+        });
+      });
+      if (preloadFirstFrame._busy) return;
+      preloadFirstFrame._busy = true;
+      (function run() {
+        const fn = preloadFirstFrame._q.shift();
+        if (!fn) { preloadFirstFrame._busy = false; return; }
+        try { fn(); } catch (e) {}
+        setTimeout(run, 80);
+      })();
+    }
+    function useStaticFallback(btn, local, fallback) {
+      if (btn.querySelector('img.static-frame')) return;
+      const label = btn.querySelector('.label');
+      const img = new Image();
+      img.className = 'static-frame'; img.decoding = 'async';
+      img.onerror = function () {
+        if (fallback && this.src !== fallback) { this.onerror = null; this.src = fallback; }
+      };
+      img.src = local || fallback;
+      const old = btn.querySelector('canvas'); if (old) old.remove();
+      btn.insertBefore(img, label);
+    }
+    function preloadAllFirstFrames() {
+      document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(preloadFirstFrame);
+    }
+
+    function activateGif(activeBtn) {
+      document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(btn => {
+        const oldGif = btn.querySelector('img.gif-active');
+        if (oldGif) oldGif.remove();
+        const canvas = btn.querySelector('canvas');
+        const staticFrame = btn.querySelector('img.static-frame');
+        if (canvas) canvas.style.display = 'block';
+        if (staticFrame) staticFrame.style.display = 'block';
+      });
+      if (!activeBtn) return;
+      const local = resolveSrc(activeBtn);
+      const fallback = resolveFallback(activeBtn);
+      if (!local && !fallback) return;
+      const canvas = activeBtn.querySelector('canvas');
+      const staticFrame = activeBtn.querySelector('img.static-frame');
+      if (canvas) canvas.style.display = 'none';
+      if (staticFrame) staticFrame.style.display = 'none';
+      const gif = new Image();
+      gif.className = 'gif-active'; gif.decoding = 'async';
+      gif.alt = activeBtn.getAttribute('data-name') || '';
+      gif.onerror = function () {
+        if (fallback && this.src !== fallback) { this.onerror = null; this.src = fallback; }
+      };
+      gif.src = local;
+      const label = activeBtn.querySelector('.label');
+      activeBtn.insertBefore(gif, label);
+    }
+
+    /* ================== TOOLTIP ================== */
+    let brandTooltipEl = null;
+    function showBrandTooltip(anchorEl, text, variant) {
+      if (!brandTooltipEl) {
+        brandTooltipEl = document.createElement('div');
+        brandTooltipEl.className = 'brand-tooltip';
+        document.body.appendChild(brandTooltipEl);
+      }
+      brandTooltipEl.className = 'brand-tooltip ' + variant;
+      brandTooltipEl.textContent = text;
+      const rect = anchorEl.getBoundingClientRect();
+      brandTooltipEl.classList.add('show');
+      const tr = brandTooltipEl.getBoundingClientRect();
+      const top = rect.top - tr.height - 8;
+      const left = rect.left + rect.width / 2 - tr.width / 2;
+      brandTooltipEl.style.top = Math.max(4, top) + 'px';
+      brandTooltipEl.style.left = Math.max(4, Math.min(left, window.innerWidth - tr.width - 4)) + 'px';
+      clearTimeout(brandTooltipEl._t);
+      brandTooltipEl._t = setTimeout(() => brandTooltipEl.classList.remove('show'), 1500);
+    }
+    document.addEventListener('click', (e) => {
+      if (brandTooltipEl && !e.target.closest('.floral-tag, .starcat-tag')) brandTooltipEl.classList.remove('show');
+    });
+
+    /* ================== CATEGORIAS ================== */
+    categoryTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const cat = tab.dataset.category;
+        activeCategory = cat;
+        categoryTabs.forEach(t => t.classList.toggle('active', t === tab));
+        wingsGrid.classList.add('hidden');
+        shieldsGrid.classList.add('hidden');
+        headsGrid.classList.add('hidden');
+        if (cat === 'wings') wingsGrid.classList.remove('hidden');
+        else if (cat === 'shields') shieldsGrid.classList.remove('hidden');
+        else if (cat === 'heads') headsGrid.classList.remove('hidden');
+        redeemArea.classList.remove('hidden');
+        clearSelection();
+        previewInfo.className = 'preview-info';
+        previewInfo.textContent = 'Nenhum item selecionado';
+        const g = cat === 'wings' ? wingsGrid : (cat === 'shields' ? shieldsGrid : headsGrid);
+        g.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(preloadFirstFrame);
+        updateOwnerCountsOnCards();
+      });
+    });
+    function clearSelection() {
+      document.querySelectorAll('.selected').forEach(b => b.classList.remove('selected'));
+      activateGif(null);
+      selectedItem = null;
+    }
+
+    /* ================== SELEÇÃO GRID PRINCIPAL ================== */
+    document.querySelectorAll('.wing-btn, .shield-btn, .head-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (e.target.closest('.floral-tag, .starcat-tag')) return;
+        if (isLocked(btn)) return;
+        const itemId = btn.getAttribute('data-item');
+        const name = btn.getAttribute('data-name') || 'Item';
+        const alreadySelected = btn.classList.contains('selected');
+        clearSelection();
+        if (alreadySelected) {
+          previewInfo.className = 'preview-info';
+          previewInfo.textContent = 'Nenhum item selecionado';
+        } else {
+          btn.classList.add('selected');
+          activateGif(btn);
+          selectedItem = { id: itemId, name, btn };
+          previewInfo.className = 'preview-info';
+          previewInfo.innerHTML = `Item selecionado: <strong>${name}</strong>`;
+        }
+      });
+    });
+
+    /* ================== REDEEM ================== */
+    async function redeem() {
+      const typed = redeemInput.value.trim().toUpperCase();
+      if (!typed) { previewInfo.className = 'preview-info'; previewInfo.textContent = 'Digite um código.'; return; }
+      if (!currentUser) { previewInfo.className = 'preview-info error'; previewInfo.textContent = 'Precisa estar logado.'; return; }
+      redeemBtn.disabled = true;
+      previewInfo.className = 'preview-info';
+      previewInfo.textContent = 'Verificando código...';
+      try {
+        const codeRef = db.collection('codes').doc(typed);
+        let matchedItem = null;
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(codeRef);
+          if (!snap.exists) { const e = new Error('INVALID'); e.code = 'INVALID'; throw e; }
+          const data = snap.data();
+          if (data.used) { const e = new Error('USED'); e.code = 'USED'; throw e; }
+          matchedItem = data.itemId;
+          if (!matchedItem) { const e = new Error('INVALID'); e.code = 'INVALID'; throw e; }
+          tx.update(codeRef, { used: true, usedBy: currentUser.uid, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        });
+        let category, alreadyOwned;
+        if (matchedItem.startsWith('wings_')) { category = 'costa'; alreadyOwned = inventory.costa.includes(matchedItem); }
+        else if (matchedItem.startsWith('shield_')) { category = 'shield'; alreadyOwned = inventory.shield.includes(matchedItem); }
+        else if (matchedItem.startsWith('head_')) { category = 'head'; alreadyOwned = inventory.head.includes(matchedItem); }
+        else { category = 'items'; alreadyOwned = inventory.items.includes(matchedItem); }
+        if (alreadyOwned) {
+          previewInfo.className = 'preview-info';
+          previewInfo.innerHTML = `ℹ️ Você já tem <strong>${NAMES[matchedItem] || matchedItem}</strong>.`;
+          redeemInput.value = ''; return;
+        }
+        inventory[category].push(matchedItem);
+        await saveInventory();
+        const btn = document.querySelector(`[data-item="${matchedItem}"]`);
+        if (btn) { btn.classList.remove('locked'); updateBtnLabel(btn, true); preloadFirstFrame(btn); }
+        reorderGrids();
+        await updateOwnerCountsOnCards();
+        previewInfo.className = 'preview-info success';
+        previewInfo.innerHTML = `✅ <strong>${NAMES[matchedItem] || matchedItem}</strong> desbloqueado!`;
+        redeemInput.value = '';
+        showRewardPopup(matchedItem, 'redeem');
+      } catch (err) {
+        previewInfo.className = 'preview-info error';
+        if (err.code === 'INVALID')      previewInfo.innerHTML = '❌ Código inválido.';
+        else if (err.code === 'USED')    previewInfo.innerHTML = '❌ Código já usado.';
+        else                             previewInfo.innerHTML = '❌ Erro ao resgatar.';
+      } finally { redeemBtn.disabled = false; }
+    }
+    redeemBtn.addEventListener('click', redeem);
+    redeemInput.addEventListener('keydown', e => { if (e.key === 'Enter') redeem(); });
+    redeemInput.addEventListener('input', () => {
+      let v = redeemInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+      if (v.length > 19) v = v.slice(0, 19);
+      redeemInput.value = v;
+    });
+    redeemInput.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const txt = (e.clipboardData || window.clipboardData).getData('text') || '';
+      redeemInput.value = txt.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 19);
+    });
+
+    /* ================== DOAÇÃO ================== */
+    let donateSelectedItem = null, donateTargetUid = null, donateTargetNickStr = '', donateTargetSkinDataUrl = '';
+
+    function getMyOwnedItems() {
+      const all = [];
+      inventory.costa.forEach(id  => all.push({ id, kind: 'costa' }));
+      inventory.shield.forEach(id => all.push({ id, kind: 'shield' }));
+      inventory.head.forEach(id   => all.push({ id, kind: 'head' }));
+      inventory.items.forEach(id  => all.push({ id, kind: 'items' }));
+      return all;
+    }
+    function getKindLabel(kind) {
+      return kind === 'costa' ? 'Asas' : kind === 'shield' ? 'Escudo' : kind === 'head' ? 'Cabeça' : 'Item';
+    }
+    function openDonateModal() {
+      donateModalOverlay.classList.add('show');
+      donateStep1.style.display = 'block';
+      donateStep2.style.display = 'none';
+      donateMsg1.textContent = ''; donateMsg1.className = 'search-msg';
+      donateMsg2.textContent = ''; donateMsg2.className = 'search-msg';
+      donateTargetNick.value = '';
+      donateNextBtn.disabled = true;
+      donateSelectedItem = null;
+      donateTargetUid = null;
+      donateTargetSkinDataUrl = '';
+      donatePreviewBox.style.display = 'none';
+      renderMyItemsForDonation();
+      setTimeout(() => donateTargetNick.focus(), 100);
+    }
+
+    function renderMyItemsForDonation() {
+      donateMyItems.innerHTML = '';
+      const owned = getMyOwnedItems();
+      if (owned.length === 0) {
+        donateMyItems.innerHTML = '<div class="sr-empty" style="grid-column:1/-1;">Você não tem itens para doar</div>';
+        return;
+      }
+      owned.forEach(({ id, kind }) => {
+        const btn = document.querySelector(`[data-item="${id}"]`);
+        const local = resolveSrc(btn), fallback = resolveFallback(btn);
+        const name = btn?.getAttribute('data-name') || NAMES[id] || id;
+        const isWing = kind === 'costa';
+
+        const el = document.createElement('div');
+        el.className = 'sr-item' + (isWing ? ' wing' : '');
+        el.dataset.itemId = id;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 256;
+        canvas.style.pointerEvents = 'none';
+        el.appendChild(canvas);
+        drawStaticFrame(canvas, local, fallback, isWing);
+
+        const label = document.createElement('span');
+        label.className = 'sr-label';
+        label.textContent = name;
+        el.appendChild(label);
+
+        el.addEventListener('click', () => {
+          donateMyItems.querySelectorAll('.sr-item').forEach(x => {
+            x.style.outline = 'none';
+            x.style.boxShadow = '';
+            const gif = x.querySelector('img.gif-active');
+            if (gif) gif.remove();
+            const c = x.querySelector('canvas');
+            if (c) c.style.display = 'block';
+          });
+          el.style.outline = '3px solid #f87171';
+          el.style.outlineOffset = '2px';
+          el.style.boxShadow = '0 12px 24px -6px #dc2626';
+          const canvasEl = el.querySelector('canvas');
+          if (canvasEl) canvasEl.style.display = 'none';
+          const gif = new Image();
+          gif.className = 'gif-active';
+          gif.decoding = 'async';
+          gif.alt = name;
+          gif.style.width = '100%';
+          gif.style.height = '100%';
+          gif.style.objectFit = isWing ? 'cover' : 'contain';
+          gif.style.pointerEvents = 'none';
+          gif.onerror = function () {
+            if (fallback && this.src !== fallback) { this.onerror = null; this.src = fallback; }
+          };
+          gif.src = local;
+          el.insertBefore(gif, label);
+          donateSelectedItem = { id, name, kind, local, fallback };
+          showDonatePreview();
+          updateDonateNextState();
+        });
+
+        donateMyItems.appendChild(el);
+      });
+    }
+
+    function showDonatePreview() {
+      if (!donateSelectedItem) { donatePreviewBox.style.display = 'none'; return; }
+      donatePreviewBox.style.display = 'block';
+      donatePreviewThumb.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.objectFit = donateSelectedItem.kind === 'costa' ? 'cover' : 'contain';
+      donatePreviewThumb.appendChild(canvas);
+      drawStaticFrame(canvas, donateSelectedItem.local, donateSelectedItem.fallback, donateSelectedItem.kind === 'costa');
+      donatePreviewName.textContent = donateSelectedItem.name;
+      donatePreviewKind.textContent = getKindLabel(donateSelectedItem.kind);
+    }
+
+    function updateDonateNextState() {
+      const nickOk = donateTargetNick.value.trim().length >= 3;
+      donateNextBtn.disabled = !(donateSelectedItem && nickOk);
+    }
+    donateTargetNick.addEventListener('input', updateDonateNextState);
+    donateToggleBtn.addEventListener('click', openDonateModal);
+    donateModalClose.addEventListener('click', () => donateModalOverlay.classList.remove('show'));
+    donateModalOverlay.addEventListener('click', (e) => {
+      if (e.target === donateModalOverlay) donateModalOverlay.classList.remove('show');
+    });
+
+    donateNextBtn.addEventListener('click', async () => {
+      if (!donateSelectedItem) return;
+      const query = cleanNick(donateTargetNick.value);
+      if (!validNick(query)) { donateMsg1.textContent = 'Nick inválido.'; donateMsg1.className = 'search-msg error'; return; }
+      if (nickKey(query) === nickKey(playerNick)) { donateMsg1.textContent = 'Não pode doar pra si mesmo.'; donateMsg1.className = 'search-msg error'; return; }
+      donateMsg1.textContent = 'Buscando jogador...'; donateMsg1.className = 'search-msg info';
+      donateNextBtn.disabled = true;
+      try {
+        const nickSnap = await db.collection('nicks').doc(nickKey(query)).get();
+        if (!nickSnap.exists) { donateMsg1.textContent = '❌ Jogador não encontrado.'; donateMsg1.className = 'search-msg error'; donateNextBtn.disabled = false; return; }
+        const uid = nickSnap.data().uid;
+        if (!uid || uid === currentUser.uid) { donateMsg1.textContent = '❌ Destinatário inválido.'; donateMsg1.className = 'search-msg error'; donateNextBtn.disabled = false; return; }
+        const userSnap = await db.collection('users').doc(uid).get();
+        if (!userSnap.exists) { donateMsg1.textContent = '❌ Perfil não encontrado.'; donateMsg1.className = 'search-msg error'; donateNextBtn.disabled = false; return; }
+        const userData = userSnap.data();
+        const targetNick = userData.nick || query;
+        donateTargetUid = uid;
+        donateTargetNickStr = targetNick;
+        donateTargetSkinDataUrl = userData.skin || '';
+
+        // Avatar 3D do destinatário dentro do modal
+        donateTargetAvatar.innerHTML = '';
+        donateTargetAvatar.classList.toggle('has-skin', !!donateTargetSkinDataUrl);
+        const avCanvas = document.createElement('canvas');
+        avCanvas.width = 62; avCanvas.height = 62;
+        avCanvas.style.cssText = 'width:100%;height:100%;display:block;image-rendering:pixelated;';
+        donateTargetAvatar.appendChild(avCanvas);
+        drawHeadToCanvas(avCanvas, donateTargetSkinDataUrl).then(() => {});
+
+        donateTargetNickLabel.textContent = targetNick;
+
+        donatePreviewItem.innerHTML = '';
+        const previewEl = document.createElement('div');
+        previewEl.className = 'sr-item' + (donateSelectedItem.kind === 'costa' ? ' wing' : '');
+
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 256;
+        canvas.style.pointerEvents = 'none';
+        previewEl.appendChild(canvas);
+        drawStaticFrame(canvas, donateSelectedItem.local, donateSelectedItem.fallback, donateSelectedItem.kind === 'costa');
+
+        const prevLabel = document.createElement('span');
+        prevLabel.className = 'sr-label';
+        prevLabel.textContent = donateSelectedItem.name;
+        previewEl.appendChild(prevLabel);
+        donatePreviewItem.appendChild(previewEl);
+
+        donateStep1.style.display = 'none';
+        donateStep2.style.display = 'block';
+        donateMsg2.textContent = ''; donateMsg2.className = 'search-msg';
+      } catch (err) {
+        donateMsg1.textContent = '❌ Erro na busca.'; donateMsg1.className = 'search-msg error';
+      } finally { donateNextBtn.disabled = false; }
+    });
+    donateBackBtn.addEventListener('click', () => {
+      donateStep2.style.display = 'none';
+      donateStep1.style.display = 'block';
+    });
+    donateConfirmBtn.addEventListener('click', async () => {
+      if (!donateSelectedItem || !donateTargetUid) return;
+      donateConfirmBtn.disabled = true;
+      donateMsg2.textContent = 'Doando...'; donateMsg2.className = 'search-msg info';
+      try {
+        const cat = donateSelectedItem.kind;
+        const itemId = donateSelectedItem.id;
+        await db.runTransaction(async (tx) => {
+          const myRef = db.collection('users').doc(currentUser.uid);
+          const mySnap = await tx.get(myRef);
+          if (!mySnap.exists) throw new Error('NO_USER');
+          const myData = mySnap.data();
+          const myArr = Array.isArray(myData[cat]) ? [...myData[cat]] : [];
+          if (!myArr.includes(itemId)) throw new Error('NOT_OWNED');
+          if (cat === 'shield' && itemId === 'shield_padrao') throw new Error('DEFAULT');
+          tx.update(myRef, {
+            [cat]: myArr.filter(x => x !== itemId),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        await db.collection('gifts').add({
+          toUid: donateTargetUid, fromUid: currentUser.uid,
+          fromNick: playerNick, itemId, category: cat,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        inventory[cat] = inventory[cat].filter(x => x !== itemId);
+        invalidateItemCountCache();
+        const btn = document.querySelector(`[data-item="${itemId}"]`);
+        if (btn) { btn.classList.remove('selected'); btn.classList.add('locked'); updateBtnLabel(btn, false); }
+        selectedItem = null;
+        previewInfo.className = 'preview-info';
+        previewInfo.textContent = 'Nenhum item selecionado';
+        await updateOwnerCountsOnCards();
+        donateMsg2.textContent = `✅ Você doou ${donateSelectedItem.name} para ${donateTargetNickStr}!`;
+        donateMsg2.className = 'search-msg info';
+        setTimeout(() => donateModalOverlay.classList.remove('show'), 1400);
+      } catch (err) {
+        donateMsg2.className = 'search-msg error';
+        if (err.message === 'NOT_OWNED')      donateMsg2.textContent = '❌ Você não possui mais esse item.';
+        else if (err.message === 'DEFAULT')   donateMsg2.textContent = '❌ Esse item padrão não pode ser doado.';
+        else                                  donateMsg2.textContent = '❌ Erro ao doar.';
+      } finally { donateConfirmBtn.disabled = false; }
+    });
+
+    /* ================== GIFTS ================== */
+    function listenForIncomingGifts() {
+      if (!currentUser) return;
+      if (unsubscribeGiftsListener) { unsubscribeGiftsListener(); unsubscribeGiftsListener = null; }
+      const myUid = currentUser.uid;
+      const listenStart = Date.now();
+      unsubscribeGiftsListener = db.collection('gifts')
+        .where('toUid', '==', myUid)
+        .onSnapshot(async (snap) => {
+          const docs = [];
+          snap.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+          docs.sort((a, b) => {
+            const ta = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+            const tb = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+            return ta - tb;
+          });
+          for (const gift of docs) {
+            const ts = gift.timestamp?.toMillis ? gift.timestamp.toMillis() : listenStart;
+            if (ts <= lastSeenGiftTimestamp) continue;
+            const itemId = gift.itemId; if (!itemId) continue;
+            let cat;
+            if (itemId.startsWith('wings_')) cat = 'costa';
+            else if (itemId.startsWith('shield_')) cat = 'shield';
+            else if (itemId.startsWith('head_')) cat = 'head';
+            else cat = 'items';
+            if (!inventory[cat].includes(itemId)) {
+              inventory[cat].push(itemId);
+              invalidateItemCountCache();
+              try {
+                await db.collection('users').doc(myUid).set({
+                  [cat]: inventory[cat],
+                  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+              } catch (e) {}
+              const btn = document.querySelector(`[data-item="${itemId}"]`);
+              if (btn) { btn.classList.remove('locked'); updateBtnLabel(btn, true); preloadFirstFrame(btn); }
+              reorderGrids();
+              updateOwnerCountsOnCards();
+            }
+            lastSeenGiftTimestamp = Math.max(lastSeenGiftTimestamp, ts);
+            giftQueue.push({ itemId, fromNick: gift.fromNick || 'Alguém' });
+            processGiftQueue();
+            try { await db.collection('gifts').doc(gift.id).delete(); } catch (e) {}
+          }
+        }, () => {});
+    }
+    async function processGiftQueue() {
+      if (giftOverlay.classList.contains('show')) return;
+      if (giftQueue.length === 0) return;
+      const next = giftQueue.shift();
+      const itemId = next.itemId;
+      const btn = document.querySelector(`[data-item="${itemId}"]`);
+      const name = btn?.getAttribute('data-name') || NAMES[itemId] || itemId;
+      const isWing = itemId.startsWith('wings_');
+      giftImg.src = '';
+      giftImg.className = isWing ? 'is-wing' : '';
+      const local = resolveSrc(btn), fallback = resolveFallback(btn);
+      giftImg.onerror = function () {
+        if (fallback && this.src !== fallback) { this.onerror = null; this.src = fallback; }
+      };
+      giftImg.src = local;
+      giftItemName.textContent = isWing ? name + ' Wings' : name;
+      giftFrom.innerHTML = `De <strong>${escapeHtml(next.fromNick)}</strong>`;
+      giftSub.textContent = 'você recebeu um presente!';
+
+      // Head 3D do RECEBEDOR (você) no popup
+      giftRecipientName.textContent = playerNick || '—';
+      if (giftRecipientCanvas) {
+        giftRecipientCanvas.width = 64; giftRecipientCanvas.height = 64;
+        drawHeadToCanvas(giftRecipientCanvas, playerSkinDataUrl).then(() => {});
+      }
+
+      giftOverlay.classList.add('show');
+      try { const s = clickSound.cloneNode(); s.volume = 0.7; s.play().catch(() => {}); } catch (e) {}
+    }
+    giftBtn.addEventListener('click', () => {
+      giftOverlay.classList.remove('show');
+      setTimeout(processGiftQueue, 400);
+    });
+
+    /* ================== INIT ================== */
+    window.addEventListener('load', () => {
+      initHead3D();
+      // Head default (fallback steve)
+      updateHead3D('');
+    });
+  </script>
+</body>
+</html>
